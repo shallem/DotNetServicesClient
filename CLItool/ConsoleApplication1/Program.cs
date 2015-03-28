@@ -3,47 +3,65 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CommandLine;
+using CommandLine.Text;
+using System.Net.Http.Headers;
+using System.Net.Http; // if you want text formatting helpers (recommended)
+using MobileHelixUtility;
+
+
 
 namespace ConsoleApplication1
 {
+
+    class Product
+    {
+        public string Name { get; set; }
+        public double Price { get; set; }
+        public string Category { get; set; }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            RunAsync().Wait();
-        }
+            Class1 f = new Class1();
+            int x = f.getFoo();
 
-        static async Task RunAsync()
-        {
-            using (var client = new HttpClient())
+            Console.WriteLine( x );
+            var options = new Options();
+            if (CommandLine.Parser.Default.ParseArguments(args, options))
             {
-                client.BaseAddress = new Uri("http://localhost:9000/");
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                // HTTP GET
-                HttpResponseMessage response = await client.GetAsync("api/products/1");
-                if (response.IsSuccessStatusCode)
+                foreach (String element in args)
                 {
-                    Product product = await response.Content.ReadAsAsync<Product>();
-                    Console.WriteLine("{0}\t${1}\t{2}", product.Name, product.Price, product.Category);
+                    Console.WriteLine(element);
                 }
+                System.Console.WriteLine();
 
-                // HTTP POST
-                var gizmo = new Product() { Name = "Gizmo", Price = 100, Category = "Widget" };
-                response = await client.PostAsJsonAsync("api/products", gizmo);
-                if (response.IsSuccessStatusCode)
+                // consume Options instance properties
+                if (options.Verbose)
                 {
-                    Uri gizmoUrl = response.Headers.Location;
-
-                    // HTTP PUT
-                    gizmo.Price = 80;   // Update price
-                    response = await client.PutAsJsonAsync(gizmoUrl, gizmo);
-
-                    // HTTP DELETE
-                    response = await client.DeleteAsync(gizmoUrl);
+                    Console.WriteLine(options.ActionType);
+                    Console.WriteLine(options.InputFile);
+                    Console.WriteLine(options.MaximumLength);
                 }
+                else if ( options.ActionType == "nrl" )
+                {
+
+                    doNRL d = new doNRL();
+                    d.go();
+                }
+                else
+                    Console.WriteLine("working ...");
             }
+
         }
+
+        
+        
+        
+        
+        
     }
 }
