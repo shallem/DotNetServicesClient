@@ -13,25 +13,17 @@ using MobileHelixUtility;
 
 namespace ConsoleApplication1
 {
-
-    class Product
-    {
-        public string Name { get; set; }
-        public double Price { get; set; }
-        public string Category { get; set; }
-    }
-
     class Program
     {
         static void Main(string[] args)
         {
             Class1 f = new Class1();
-            int x = f.getFoo();
-
-            Console.WriteLine( x );
-            var options = new Options();
+            String v = f.getVersion();
+            
+            var options = new Options( v );
             if (CommandLine.Parser.Default.ParseArguments(args, options))
             {
+                doWork work = new doWork( options.ActionCertificate );
 
                 foreach (String element in args)
                 {
@@ -42,18 +34,47 @@ namespace ConsoleApplication1
                 // consume Options instance properties
                 if (options.Verbose)
                 {
-                    Console.WriteLine(options.ActionType);
-                    Console.WriteLine(options.InputFile);
+                    Console.WriteLine(options.ActionCommand);
+                    Console.WriteLine(options.ActionHost);
+                    Console.WriteLine(options.ActionPort);
+                    Console.WriteLine(options.ActionCertificate);
+                    Console.WriteLine(options.ActionUsername);
+                    Console.WriteLine(options.ActionPassword);
                     Console.WriteLine(options.MaximumLength);
                 }
-                else if ( options.ActionType == "nrl" )
+                else if ( options.ActionCommand == "nrl" )
                 {
-
-                    doNRL d = new doNRL();
-                    d.go();
+                    work.GetNrl(
+                        options.ActionHost, 
+                        options.ActionPort
+                    );
+                }
+                else if (options.ActionCommand == "docid")
+                {
+                    work.GetDocId(
+                        options.ActionHost, 
+                        options.ActionPort, 
+                        options.ActionUsername, 
+                        options.ActionPassword, 
+                        options.ActionDocid
+                    );
+                }
+                else if (options.ActionCommand == "list")
+                {
+                    work.GetListing(
+                        options.ActionHost, 
+                        options.ActionPort, 
+                        options.ActionUsername, 
+                        options.ActionPassword
+                    );
                 }
                 else
                     Console.WriteLine("working ...");
+            }
+            else
+            {
+                doTests d = new doTests();
+                d.test1();
             }
 
         }
