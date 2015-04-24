@@ -8,7 +8,7 @@ using System.Net.Http.Headers;
 using System.Net.Http; // if you want text formatting helpers (recommended)
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
-
+using System.Web.Script.Serialization;
 
 namespace MobileHelixUtility
 {
@@ -22,22 +22,78 @@ namespace MobileHelixUtility
 
     }
 
+
     public class doTests
     {
+
+        
+
+        public String getSession()
+        {
+            try
+            {
+                /*
+                 * {
+                        "deviceRegion" : "New York",
+                        "client" : "testclient",
+                        "userID" : "seth.hallem10",
+                        "password" : "helix"
+                    }
+                 * */
+                //string postString = string.Format("deviceRegion={0}&client={1}&userID={2}&password={3}", "Default", "mobilehelixpoc", "admin", "helix");
+                string postString = "{" +
+                        "\"deviceRegion\" : \"Default\"," +
+                        "\"client\" : \"mobilehelixpoc\"," +
+                        "\"userID\" : \"ilya\"," +
+                        "\"password\" : \"helix,41\"}";
+
+                HttpWebRequest Request = (HttpWebRequest)WebRequest.Create("https://192.168.1.113:8082/ws/restricted/session");
+                Request.ClientCertificates.Add(new X509Certificate2(@"E:\Mobile Helix\mycert.p12", "coverity"));
+                Request.UserAgent = "Client Cert Sample";
+                Request.Method = "POST";
+                Request.ContentType = "application/json";
+                Request.ContentLength = postString.Length;
+                Request.Accept = "application/json";
+                System.Net.ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
+                StreamWriter requestWriter = new StreamWriter(Request.GetRequestStream());
+                requestWriter.Write(postString);
+                requestWriter.Close();
+
+                HttpWebResponse Response = (HttpWebResponse)Request.GetResponse();
+                // Print the repsonse headers.
+                Console.WriteLine("{0}", Response.Headers);
+                Console.WriteLine();
+                // Get the certificate data.
+                StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
+                JavaScriptSerializer js = new JavaScriptSerializer();
+                var obj = js.Deserialize<dynamic>(sr.ReadToEnd());
+                foreach (var o in obj["list"])
+                {
+                    Console.WriteLine("{0}", o);
+                }
+
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return null;
+            }
+        }
+
+
         public void test1()
         {
             try
             {
-                //You must change the path to point to your .cer file location. 
-                X509Certificate Cert = X509Certificate2.CreateFromCertFile("d:\\mobile helix\\cert.cer");
-                // Handle any certificate errors on the certificate from the server.
-                ServicePointManager.CertificatePolicy = new CertPolicy();
-                // You must change the URL to point to your Web server.
                 HttpWebRequest Request = (HttpWebRequest)WebRequest.Create("https://192.168.1.113:8082/ws/restricted/registerserver");
-                Request.ClientCertificates.Add(new X509Certificate2( @"D:\Mobile Helix\mycert.p12", "coverity"));
+                Request.ClientCertificates.Add(new X509Certificate2( @"e:\mobile helix\mycert.p12", "coverity"));
 
                 Request.UserAgent = "Client Cert Sample";
                 Request.Method = "GET";
+                System.Net.ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
+
                 HttpWebResponse Response = (HttpWebResponse)Request.GetResponse();
                 // Print the repsonse headers.
                 Console.WriteLine("{0}", Response.Headers);
@@ -62,11 +118,48 @@ namespace MobileHelixUtility
             }
 
         }
+
+        public char[] JSONtest()
+        {
+            try
+            {
+                //You must change the path to point to your .cer file location. 
+                X509Certificate Cert = X509Certificate2.CreateFromCertFile("c:\\mobile helix\\cert.cer");
+                // Handle any certificate errors on the certificate from the server.
+                ServicePointManager.CertificatePolicy = new CertPolicy();
+                // You must change the URL to point to your Web server.
+                HttpWebRequest Request = (HttpWebRequest)WebRequest.Create("https://192.168.1.113:8082/ws/restricted/registerserver");
+                Request.ClientCertificates.Add(new X509Certificate2(@"C:\Mobile Helix\mycert.p12", "coverity"));
+
+                Request.UserAgent = "Client Cert Sample";
+                Request.Method = "GET";
+                HttpWebResponse Response = (HttpWebResponse)Request.GetResponse();
+                // Print the repsonse headers.
+                Console.WriteLine("{0}", Response.Headers);
+                Console.WriteLine();
+                // Get the certificate data.
+                StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
+                int count;
+                char[] ReadBuf = new char[1024];
+                sr.Read(ReadBuf, 0, 1024);
+                return ReadBuf;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return null;
+            }
+
+        }
+
     }
 
     public class doWork
     {
         private String cert = null;
+
+     
+
 
         public doWork( string c ){
             cert = c;
@@ -177,6 +270,24 @@ namespace MobileHelixUtility
             // Return true so that any certificate will work with this sample.
             return true;
         }
+    }
+
+
+    sealed class AcceptAllCertificatePolicy : ICertificatePolicy
+    {
+        private const uint CERT_E_UNTRUSTEDROOT = 0x800B0109;
+
+        public bool CheckValidationResult(ServicePoint srvPoint, X509Certificate
+        certificate, WebRequest request, int certificateProblem)
+        {
+            // Just accept.
+            return true;
+        }
+        /*public bool CheckValidationResult(ServicePoint sp,
+        X509Certificate cert, WebRequest req, int problem)
+        {
+            return true;  
+        }*/
     }
 }
 /*

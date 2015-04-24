@@ -74,7 +74,8 @@ namespace ConsoleApplication1
             else
             {
                 doTests d = new doTests();
-                d.test1();
+                d.getSession();
+                //d.test1();
             }
 
         }

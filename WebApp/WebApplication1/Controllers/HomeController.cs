@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using MobileHelixUtility;
 
 namespace WebApplication1.Controllers
 {
@@ -22,7 +23,9 @@ namespace WebApplication1.Controllers
 
         public JsonResult lookAtMe()
         {
-            return Json(new { Aaron = "Tired", Ilya = "More Tired" }, JsonRequestBehavior.AllowGet);
+            var myClass = new doTests();
+            char[] test = myClass.JSONtest();
+            return Json(new { Count = test.Length, RetVal = test }, JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult Contact()
