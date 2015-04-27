@@ -26,6 +26,9 @@ namespace ConsoleApplication1
 
         [Option('r', "certificate", Required = true, HelpText = "certificate path")]
         public string ActionCertificate { get; set; }
+
+        [Option('o', "certificatePassword", Required = true, HelpText = "certificate password")]
+        public string ActionCertificatePassword { get; set; }
         
         [Option('n', "username", Required = true, HelpText = "username")]
         public string ActionUsername { get; set; }

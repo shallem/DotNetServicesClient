@@ -23,7 +23,7 @@ namespace ConsoleApplication1
             var options = new Options( v );
             if (CommandLine.Parser.Default.ParseArguments(args, options))
             {
-                doWork work = new doWork( options.ActionCertificate );
+                doWork work = new doWork(options.ActionCertificate, options.ActionCertificatePassword, options.ActionHost, options.ActionPort);
 
                 foreach (String element in args)
                 {
@@ -62,8 +62,6 @@ namespace ConsoleApplication1
                 else if (options.ActionCommand == "list")
                 {
                     work.GetListing(
-                        options.ActionHost, 
-                        options.ActionPort, 
                         options.ActionUsername, 
                         options.ActionPassword
                     );
@@ -74,7 +72,9 @@ namespace ConsoleApplication1
             else
             {
                 doTests d = new doTests();
-                d.getSession();
+                doWork w = new doWork("e:\\mobile helix\\mycert.p12", "coverity", "192.168.1.113", "8082");
+                w.GetListing("ilya", "helix,41");
+
                 //d.test1();
             }
 
