@@ -104,20 +104,32 @@ namespace MobileHelixUtility
 
     public class doWork
     {
-        private String cert = null;
+        byte[] cert;
         private String certpass = null;
         private String host = null;
         private String ctrl_port = null;
         private String apps_port = null;
+        String[] session = null;
 
-        public doWork(string c, string cp, string h, string p)
+        
+        public doWork(byte[] certificate, string certPassword, string h, string port, string user, string pass )
         {
-            cert = c;
-            certpass = cp;
+            cert = certificate;
+            certpass = certPassword;
             host = h;
-            ctrl_port = p;
-            apps_port = (Int32.Parse(p) + 200).ToString();
+            ctrl_port = port;
+            apps_port = (Int32.Parse(port) + 200).ToString();
+            session = getSession(user, pass);
+        }
 
+        public doWork(string[] sess, byte[] certificate, string certPassword, string h, string port, string user, string pass)
+        {
+            cert = certificate;
+            certpass = certPassword;
+            host = h;
+            ctrl_port = port;
+            apps_port = (Int32.Parse(port) + 200).ToString();
+            session = sess;
         }
 
         public doWork()
@@ -131,7 +143,7 @@ namespace MobileHelixUtility
             try
             {
                 HttpWebRequest Request = (HttpWebRequest)WebRequest.Create(uri);
-                Request.ClientCertificates.Add(new X509Certificate2(@cert, certpass));
+                Request.ClientCertificates.Add(new X509Certificate2(cert, certpass));
                 Request.UserAgent = "Client Cert Sample";
                 Request.Method = "POST";
                 Request.ContentType = "application/json";
@@ -157,7 +169,7 @@ namespace MobileHelixUtility
             try
             {
                 HttpWebRequest Request = (HttpWebRequest)WebRequest.Create(uri);
-                Request.ClientCertificates.Add(new X509Certificate2(@cert, certpass));
+                Request.ClientCertificates.Add(new X509Certificate2(cert, certpass));
                 Request.UserAgent = "Client Cert Sample";
                 Request.Method = "GET";
                 Request.ContentType = "application/json";
@@ -174,7 +186,8 @@ namespace MobileHelixUtility
             }
         }
 
-        private String[] getSession( string user, string password)
+        // will return the sessid (Session id) and the first instance of a FileBox (type 8) app
+        public String[] getSession( string user, string password)
         {
             String[] retVal;
             int retry = 3;
@@ -207,9 +220,10 @@ namespace MobileHelixUtility
                         Console.WriteLine("Session id: " + retVal[0]);
                         foreach (Dictionary<string, dynamic> app in dict["apps"])
                         {
+                            // find the first app that is of type 8 (file box type)
                             if (Convert.ToInt32(app["appType"]) == 8)
                             {
-                                retVal[1] = app["uniqueID"];
+                                retVal[1] = app["uniqueID"]; //unique ID of the app we will use to access WorkSite
                                 break;
                             }
                         }
@@ -227,7 +241,7 @@ namespace MobileHelixUtility
             return null; //3 retries failed!
         }
 
-        private String[] getRoots( string[] session )
+        public String[] getRoots( string[] session )
         {
             String[] retVal;
             Console.WriteLine("Trying to get Roots for session " + session[0]);
@@ -265,9 +279,9 @@ namespace MobileHelixUtility
 
         }
 
-        private System.Collections.ArrayList getSyncdir(string[] session, string digest, string target)
+        
+        public Stream getSyncdir(string[] session, string digest, string target)
         {
-            String[] retVal;
             try
             {
 
@@ -283,26 +297,7 @@ namespace MobileHelixUtility
                 //Console.WriteLine("{0}", Response.Headers);
                 //Console.WriteLine();
                 // Get the certificate data.
-                StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
-                JavaScriptSerializer js = new JavaScriptSerializer();
-                //var obj = js.Deserialize<dynamic>(sr.ReadToEnd());
-                var ret = sr.ReadToEnd();
-                var dict = js.Deserialize<Dictionary<string, dynamic>>(ret);
-                var status = dict["msg"];
-                if (String.Compare("success", status, true) == 0)
-                {
-                    /*
-                    Dictionary<string, dynamic> t = dict["roots"];
-                    int count = t.Count();
-                    retVal = new String[count];
-                    */
-
-                    System.Collections.ArrayList t = dict["changes"]["adds"];
-                    return t;
-                    
-                }
-
-                return null;
+                return Response.GetResponseStream();
             }
             catch (Exception e)
             {
@@ -311,7 +306,7 @@ namespace MobileHelixUtility
             }
         }
 
-        private Stream getPDF(string[] session, string docid, string filename, string location)
+        private Stream getPDF(string docid, string filename, string location)
         {
             if (session.Length == 2)
             {
@@ -351,7 +346,7 @@ namespace MobileHelixUtility
             //session(host, port, "ws/restricted/registerserver" );
         }
 
-        public void GetDocId(string username, string password, string docid, string filename, string location)
+        public Stream GetDocId(string docid, string filename, string location)
         {
            
             /*
@@ -361,14 +356,57 @@ namespace MobileHelixUtility
             sessionid - Base-64 encoded unique ID of the user session on the app server.
             appid - Numeric ID of the Controller app that mobilizes the file system you want to query.
             */
-            String[] session = getSession(username, password);
             if (session != null && session.Length == 2)
             {
-               // var o = 
+                return getPDF(docid, filename, location);
+            }
+            return null;
+        }
+
+        /* This is the starting point for listing contents/directories. 
+         * If there is only 1 filesystem (e.g. only WorkSite) then this returns the WS folder root structure
+         * If there are more than 1 filesystems, then it returns the list of file systems
+        */
+        public String GetListing(string digest)
+        {
+            //start at "ROOT" first
+            if (digest == null || digest == "")
+                digest = "ROOT";
+
+            String[] root = null; 
+            if (session != null && session.Length == 2)
+            {
+                root = getRoots(session);
+                if (root != null)
+                {
+                    var sync = getSyncdir(session, root[0], digest);
+                    StreamReader sr = new StreamReader(sync, Encoding.Default);
+                    JavaScriptSerializer js = new JavaScriptSerializer();
+                    var ret = sr.ReadToEnd();
+                    var dict = js.Deserialize<Dictionary<string, dynamic>>(ret);
+                    var status = dict["msg"];
+                    if (String.Compare("success", status, true) == 0)
+                    {
+                        return ret;
+                    }
+                    return "error: " + dict["msg"];
+                }
+                else
+                {
+                    Console.WriteLine("Unable to get filesystem roots.");
+                    return "error: Unable to get filesystem roots.";
+                }
+
+            }
+            else
+            {
+                Console.WriteLine("Session creation failed.");
+                return "error: Session creation failed.";
             }
         }
 
-        public void GetListing(string username, string password)
+        /*
+        public void GetListingTemp(string username, string password)
         {
             String[] session = getSession( username, password );
             String[] globalKeys = null;
@@ -507,7 +545,7 @@ namespace MobileHelixUtility
             }
             return;
         }
-
+        */
 
         /*
         private void session( string host, string port, string command)

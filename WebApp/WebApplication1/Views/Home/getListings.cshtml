@@ -1,0 +1,42 @@
+﻿@model IEnumerable<WebApplication1.Models.mobileHelixItems>
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Directory Listing</title>
+</head>
+<body>
+
+    <p>
+        Select from @Model.Count()
+        Items:
+    </p>
+    
+    <h2> @Model.ElementAt(0).current </h2>
+    <ul>
+        @foreach (var m in Model)
+        {
+            if (m.isFile == false) { 
+                <li>
+                    <a href="/Home/getListings?where=@Server.HtmlEncode(m.globalKey)">@m.displayName</a>
+                </li>
+            }
+            else
+            {
+                <li>
+                    <a href="/Home/getDocument?docid=@m.globalKey&fileName=@m.displayName&parentDigest=@m.parentDigest">@m.displayName</a>
+                </li>
+            }
+            
+
+        }
+    </ul>
+
+</body>
+</html>
