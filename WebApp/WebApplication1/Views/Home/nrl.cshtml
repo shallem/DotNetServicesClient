@@ -1,0 +1,26 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Mobile Helix Upload NRL</title>
+</head>
+<body>
+    <h2>Upload your NRL File please</h2>
+    @using (Html.BeginForm("nrl",
+                        "Home",
+                        FormMethod.Post,
+                        new { enctype = "multipart/form-data" }))
+    {
+        <label for="file">Upload NRL file:</label>
+        <input type="file" name="file" id="file" /><br><br>
+        <input type="submit" value="Go" />
+        <br><br>
+        @ViewBag.Message
+    }
+</body>
+</html>

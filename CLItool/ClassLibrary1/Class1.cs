@@ -282,6 +282,8 @@ namespace MobileHelixUtility
         
         public Stream getSyncdir(string[] session, string digest, string target)
         {
+            if (target == null)
+                target = "ROOT";
             try
             {
 
@@ -312,16 +314,38 @@ namespace MobileHelixUtility
             {
                 try
                 {
+                    String uri;
+                    if ( 
+                            location == null ||
+                            location.Length > 0
+                        )
+                    {
+                        location = "ROOT";
+                    }
 
-                    string uri = "https://" + host + ":" + apps_port +
-                        "/clientws/files/getfileview?appid=" + 
-                        Uri.EscapeDataString(session[1]) +
-                        "&digest=" + Uri.EscapeDataString(location) +
-                        //"&filename=" + WebUtility.UrlEncode(filename) +
-                        "&filename=" + Uri.EscapeDataString(filename) +
-                        "&id=" + Uri.EscapeDataString(docid) +
-                        "&sessionid=" + Uri.EscapeDataString(session[0]);
-                        
+                    if  (
+                            filename != null &&
+                            filename.Length > 0
+                        )
+                    {
+                        uri = "https://" + host + ":" + apps_port +
+                            "/clientws/files/getfileview?appid=" +
+                            Uri.EscapeDataString(session[1]) +
+                            "&digest=" + Uri.EscapeDataString(location) +
+                            "&filename=" + Uri.EscapeDataString(filename) +
+                            "&id=" + Uri.EscapeDataString(docid) +
+                            "&sessionid=" + Uri.EscapeDataString(session[0]);
+                    }
+                    else
+                    {
+                        uri = "https://" + host + ":" + apps_port +
+                            "/clientws/files/getfileview?appid=" +
+                            Uri.EscapeDataString(session[1]) +
+                            "&digest=" + Uri.EscapeDataString(location) +
+                            "&id=" + Uri.EscapeDataString(docid) +
+                            "&sessionid=" + Uri.EscapeDataString(session[0]);
+                    }
+    
 
                     HttpWebResponse Response = doGET(uri);
                     // Print the repsonse headers.

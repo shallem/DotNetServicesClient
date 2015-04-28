@@ -14,21 +14,23 @@ namespace WebApplication1.Controllers
 {
     public class HomeController : Controller
     {
-        public FileContentResult getDocument(string docid, string fileName, string parentDigest)
-        {
-            if (Request.Cookies["mobilehelix1"] != null)
+        private doWork work = null;
+        private String[] session = null;
+       
+        private bool initFunction(){
+            try
             {
-                String[] session = new String[2];
-                session[0] = Request.Cookies["mobilehelix1"]["sessid"];
-                session[1] = Request.Cookies["mobilehelix1"]["appid"];
+                session = new String[2];
+                session[0] = (string)(Session["sessid"]);
+                session[1] = (string)(Session["appid"]);
                 byte[] cert = (byte[])(Session["certificate"]);
-                String certpass = Request.Cookies["mobilehelix1"]["certpass"];
-                string h = Request.Cookies["mobilehelix1"]["host"];
-                string p = Request.Cookies["mobilehelix1"]["port"];
-                string u = Request.Cookies["mobilehelix1"]["userName"];
-                string pass = Request.Cookies["mobilehelix1"]["password"];
+                String certpass = (string)(Session["certpass"]);
+                string h = (string)(Session["host"]);
+                string p = (string)(Session["port"]);
+                string u = (string)(Session["userName"]);
+                string pass = (string)(Session["password"]);
 
-                doWork work = new doWork(
+                work = new doWork(
                     session,
                     cert,
                     certpass,
@@ -37,6 +39,24 @@ namespace WebApplication1.Controllers
                     u,
                     pass
                 );
+                return true;
+            } catch(Exception e){
+                return false;
+            }
+
+        }
+
+        public FileContentResult getDocument(string docid, string fileName, string parentDigest )
+        {
+            if ( initFunction() == false ){
+                 //init will fail if the proper values are not in the session
+                return null;
+            }
+            try{
+                // when pulling up doc by docid or NRL
+                if (parentDigest == null)
+                    parentDigest = (string)(Session["rootid"]);
+
                 Stream docStream = work.GetDocId(docid, fileName, parentDigest);
                 byte[] thePDF;
                 using (var streamReader = new MemoryStream())
@@ -49,42 +69,68 @@ namespace WebApplication1.Controllers
                 Response.AppendHeader("Content-Disposition", "inline; filename=" + fileName);
                 return File(thePDF, mimeType);
             }
-            return null;
-        } 
+            catch (Exception e)
+            {
+                ViewBag.Message = "Error fetching file." + e.Message;
+                return null;
+            }
+        }
+
+        public ActionResult nrl(HttpPostedFileBase file)
+        {
+            if (initFunction() == false)
+            {
+                return RedirectToAction("init", "home", null);
+            }
+            if (file != null && file.ContentLength > 0)
+            {
+                try
+                {
+                    string nrlContents;
+                    using (StreamReader inputStreamReader = new StreamReader(file.InputStream))
+                    {
+                        // make sure bogus files don't get too far
+                        int counter = 10;
+                        while ((nrlContents = inputStreamReader.ReadLine()) != null && counter > 0)
+                        {
+                            counter--;
+                            if ( nrlContents.StartsWith("!nrtdms") == true )
+                                return RedirectToAction("getDocument", new { docid = nrlContents }); 
+                        } 
+
+                    }
+                }
+                catch (Exception e)
+                {
+                    ViewBag.message = e.Message;
+                }
+            }
+            return View();
+        }
+        public ActionResult docid( string doc)
+        {
+            if (initFunction() == false)
+            {
+                return RedirectToAction("init", "home"); //no cookies means need to start at the beginning            
+            }
+            //getDocument(string docid, string fileName, string parentDigest)
+            if (doc != null)
+                return RedirectToAction("getDocument", new { docid = doc} ); //no cookies means need to start at the beginning            
+            else
+                return View();
+        }
 
         public ActionResult getListings(string where)
         {
-            if (Request.Cookies["mobilehelix1"] == null)
+            if (initFunction() == false)
             {
-                return RedirectToAction("list", "home"); //no cookies means need to start at the beginning
-            }
-            else
+                return RedirectToAction("init", "home"); //no cookies means need to start at the beginning            
+            } 
+            try
             {
-                String[] session = new String[2];
-                session[0] = Request.Cookies["mobilehelix1"]["sessid"];
-                session[1] = Request.Cookies["mobilehelix1"]["appid"];
-                byte[] cert = (byte[])(Session["certificate"]);
-                String certpass = Request.Cookies["mobilehelix1"]["certpass"];
-                string h = Request.Cookies["mobilehelix1"]["host"];
-                string p = Request.Cookies["mobilehelix1"]["port"];
-                string u = Request.Cookies["mobilehelix1"]["userName"];
-                string pass = Request.Cookies["mobilehelix1"]["password"];
-
-                if (where == null)
-                    where = "ROOT";
-
-                doWork work = new doWork(
-                    session, 
-                    cert,
-                    certpass,
-                    h,
-                    p,
-                    u,
-                    pass
-                );
-                Stream sync = work.getSyncdir(session, Request.Cookies["mobilehelix1"]["rootid"], where);
+                Stream sync = work.getSyncdir(session, (string) (Session["rootid"]), where);
                 if ( sync == null)
-                    return RedirectToAction("list", "home"); //no sync means we need to start at the beginning
+                    return RedirectToAction("init", "home"); //no sync means we need to start at the beginning
 
                 StreamReader sr = new StreamReader(sync, Encoding.Default);
                 var ret = sr.ReadToEnd();
@@ -103,33 +149,26 @@ namespace WebApplication1.Controllers
                 }
                 
                 return View(items);
-                
+
+            }
+            catch (Exception e)
+            {
+                return RedirectToAction("init", "home"); //no cookies means need to start at the beginning
             }
         }
 
-        public ActionResult Index()
-        {
-            return View();
-        }
+        
 
-        public ActionResult About()
-        {
-            ViewBag.Message = "Your application description page.";
-            ViewBag.Hello = "Aaron";
-            return View();
-        }
-
-        public ActionResult showListings()
-        {
-
-            return View();
-        }
-
-        public ActionResult list(HttpPostedFileBase file, string certpassword, string h, string port, string user, string pass)
+        public ActionResult init(HttpPostedFileBase file, string certpassword, string h, string port, string user, string pass)
         {
             Console.WriteLine( "certpassword: " + certpassword + " h: " + h + " port: " + port + " user: " + user + " pass: " + pass);
+            if (initFunction() == true)
+            {
+                return RedirectToAction("index", "home", null);
+            }
             if (file != null && file.ContentLength > 0) 
             {
+
                 try
                 {
                     BinaryReader b = new BinaryReader(file.InputStream);
@@ -138,24 +177,23 @@ namespace WebApplication1.Controllers
                     doWork work = new doWork(cert, certpassword, h, port, user, pass);
                     String[] session = work.getSession( user, pass);
 
-                    HttpCookie cookie = new HttpCookie("mobilehelix1");
-                    cookie.Values.Add("userName", user);
-                    cookie.Values.Add("password", pass);
-                    cookie.Values.Add("sessid", session[0]);
-                    cookie.Values.Add("appid", session[1]);
-                    cookie.Values.Add("host", h );
-                    cookie.Values.Add("port", port);
+                    Session["userName"] = user;
+                    Session["password"] = pass;
+                    Session["sessid"] = session[0];
+                    Session["appid"] = session[1];
+                    Session["host"] = h ;
+                    Session["port"] = port;
 
                     string theCert = Encoding.UTF8.GetString(cert);
-                    cookie.Values.Add("cert", theCert);
-                    cookie.Values.Add("certpass", certpassword);
+                    Session["cert"] = theCert;
+                    Session["certpass"] = certpassword;
 
                     
                     String[] roots = work.getRoots(session);
-                    cookie.Values.Add("rootid", roots[0]);
-                    Response.Cookies.Add(cookie);
-                    ViewBag.Message = "redirecting...";
-                    return View();
+                    Session["rootid"] = roots[0];
+                    //ViewBag.Message = "redirecting...";
+                    //return View();
+                    return RedirectToAction("index", "home", null);
                 }
                 catch (Exception ex)
                 {
@@ -168,19 +206,24 @@ namespace WebApplication1.Controllers
             }
             return View();  
         }
-        public JsonResult lookAtMe()
-        {
-            //doWork(string certificate, string certPassword, string h, string port, string user, string pass )
-            var work = new doTests();
-            char[] test = work.JSONtest();
-            return Json(new { Count = test.Length, RetVal = test }, JsonRequestBehavior.AllowGet);
-        }
 
+        public ActionResult Index()
+        {
+            return View();
+        }
         public ActionResult Contact()
         {
-            ViewBag.Message = "Your contact page.";
+            ViewBag.Message = "Please contact Ilya Dreytser at ilya@mobilehelix.com with any questions or comments.";
 
             return View();
         }
+
+        public ActionResult About()
+        {
+            ViewBag.Message = "This is a demo web application developed by Mobile Helix Inc. It facilitates interactions with WorkSite.";
+            return View();
+        }
+
+
     }
 }
