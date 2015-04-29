@@ -24,84 +24,6 @@ namespace MobileHelixUtility
 
     }
 
-
-    public class doTests
-    {
-
-
-
-
-        public void test1()
-        {
-            try
-            {
-                HttpWebRequest Request = (HttpWebRequest)WebRequest.Create("https://192.168.1.113:8082/ws/restricted/registerserver");
-                Request.ClientCertificates.Add(new X509Certificate2( @"e:\mobile helix\mycert.p12", "coverity"));
-
-                Request.UserAgent = "Client Cert Sample";
-                Request.Method = "GET";
-                System.Net.ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
-
-                HttpWebResponse Response = (HttpWebResponse)Request.GetResponse();
-                // Print the repsonse headers.
-                Console.WriteLine("{0}", Response.Headers);
-                Console.WriteLine();
-                // Get the certificate data.
-                StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
-                int count;
-                char[] ReadBuf = new char[1024];
-                do
-                {
-                    count = sr.Read(ReadBuf, 0, 1024);
-                    if (0 != count)
-                    {
-                        Console.WriteLine(new string(ReadBuf));
-                    }
-
-                } while (count > 0);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-
-        }
-
-        public char[] JSONtest()
-        {
-            try
-            {
-                //You must change the path to point to your .cer file location. 
-                X509Certificate Cert = X509Certificate2.CreateFromCertFile("c:\\mobile helix\\cert.cer");
-                // Handle any certificate errors on the certificate from the server.
-                ServicePointManager.CertificatePolicy = new CertPolicy();
-                // You must change the URL to point to your Web server.
-                HttpWebRequest Request = (HttpWebRequest)WebRequest.Create("https://192.168.1.113:8082/ws/restricted/registerserver");
-                Request.ClientCertificates.Add(new X509Certificate2(@"C:\Mobile Helix\mycert.p12", "coverity"));
-
-                Request.UserAgent = "Client Cert Sample";
-                Request.Method = "GET";
-                HttpWebResponse Response = (HttpWebResponse)Request.GetResponse();
-                // Print the repsonse headers.
-                Console.WriteLine("{0}", Response.Headers);
-                Console.WriteLine();
-                // Get the certificate data.
-                StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
-                int count;
-                char[] ReadBuf = new char[1024];
-                sr.Read(ReadBuf, 0, 1024);
-                return ReadBuf;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return null;
-            }
-
-        }
-
-    }
-
     public class doWork
     {
         byte[] cert;
@@ -111,7 +33,7 @@ namespace MobileHelixUtility
         private String apps_port = null;
         String[] session = null;
 
-        
+        //this one is used by the CLI - since we can keep the session[] in memory while the program runs
         public doWork(byte[] certificate, string certPassword, string h, string port, string user, string pass )
         {
             cert = certificate;
@@ -122,6 +44,7 @@ namespace MobileHelixUtility
             session = getSession(user, pass);
         }
 
+        // this one is used by the webapp - it needs to provide session[] each time the page reloads
         public doWork(string[] sess, byte[] certificate, string certPassword, string h, string port, string user, string pass)
         {
             cert = certificate;
@@ -229,6 +152,7 @@ namespace MobileHelixUtility
                         }
                         return retVal;
                     } else {
+                        Console.WriteLine( "Session start failed: " + status);
                         retry--;
                     }
                 }
@@ -308,20 +232,57 @@ namespace MobileHelixUtility
             }
         }
 
+        public String getFilename(string docid, string location)
+        {
+            if (session != null && session.Length == 2)
+            {
+                if (
+                    location == null ||
+                    location.Length > 0
+                   )
+                {
+                    location = "ROOT";
+                }
+                try
+                {
+                    String uri = "https://" + host + ":" + apps_port +
+                               "/clientws/files/getfileinfo?appid=" +
+                               Uri.EscapeDataString(session[1]) +
+                               "&digest=" + Uri.EscapeDataString(location) +
+                               "&id=" + Uri.EscapeDataString(docid) +
+                               "&sessionid=" + Uri.EscapeDataString(session[0]);
+
+                    HttpWebResponse Response = doGET(uri);
+                    StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
+                    JavaScriptSerializer js = new JavaScriptSerializer();
+                    var ret = sr.ReadToEnd();
+                    var dict = js.Deserialize<Dictionary<string, dynamic>>(ret);
+                    var status = dict["msg"];
+                    if (String.Compare("success", status, true) == 0)
+                    {
+                        String name = dict["file"]["displayName"];
+                        return name;
+                    }
+                    else
+                        return null;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    return null;
+                }
+            }
+            return null;
+        }
+
         private Stream getPDF(string docid, string filename, string location)
         {
-            if (session.Length == 2)
+            if (session != null && session.Length == 2)
             {
                 try
                 {
                     String uri;
-                    if ( 
-                            location == null ||
-                            location.Length > 0
-                        )
-                    {
-                        location = "ROOT";
-                    }
+                    
 
                     if  (
                             filename != null &&
@@ -366,10 +327,6 @@ namespace MobileHelixUtility
             }
         }
 
-        public void GetNrl( string host, string port ){
-            //session(host, port, "ws/restricted/registerserver" );
-        }
-
         public Stream GetDocId(string docid, string filename, string location)
         {
            
@@ -382,6 +339,15 @@ namespace MobileHelixUtility
             */
             if (session != null && session.Length == 2)
             {
+                // if filename is blank, need to find it
+                if (
+                    location == null ||
+                    location.Length > 0
+                   )
+                {
+                    location = "ROOT";
+                }
+
                 return getPDF(docid, filename, location);
             }
             return null;

@@ -17,6 +17,35 @@ namespace ConsoleApplication1
     {
         private static doWork work;
 
+        // used to save the PDF locally
+        private static bool savePDF(Stream pdf, String tempname)
+        {
+            string FILE_PATH = Directory.GetCurrentDirectory() + "\\" + tempname;
+            Console.WriteLine("Saving PDF " + FILE_PATH);
+            try
+            {
+                using (var writeStream = File.OpenWrite(FILE_PATH))
+                {
+                    if (pdf == null)
+                    {
+                        Console.WriteLine("Unable to fetch PDF");
+                        return false;
+                    }
+                    else
+                    {
+                        pdf.CopyTo(writeStream);
+                        writeStream.Close();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Exception: " + e);
+                return false;
+            }
+        }
+
         // where: fetch listing for this location
         private static void getListings( string where )
         {
@@ -65,24 +94,12 @@ namespace ConsoleApplication1
                                 string tempname = dict["changes"]["adds"][res]["displayName"];
                                 if ( tempname.EndsWith(".pdf", true, null) == false) //i.e. it doesn't end in .pdf ignoring case
                                     tempname += ".pdf";
-                                string FILE_PATH = "E:\\Mobile Helix\\Visual Studio Projects\\" + tempname;
-                                using (var writeStream = File.OpenWrite(FILE_PATH))
-                                {
-                                    Stream pdf = work.GetDocId(
-                                        dict["changes"]["adds"][res]["globalKey"],
-                                        dict["changes"]["adds"][res]["displayName"],
-                                        dict["changes"]["adds"][res]["parentDigest"]
-                                    );
-                                    if (pdf == null)
-                                    {
-                                        Console.WriteLine("Unable to fetch PDF");
-                                    }
-                                    else
-                                    {
-                                        pdf.CopyTo(writeStream);
-                                        writeStream.Close();
-                                    }
-                                }
+                                Stream pdf = work.GetDocId(
+                                    dict["changes"]["adds"][res]["globalKey"],
+                                    dict["changes"]["adds"][res]["displayName"],
+                                    dict["changes"]["adds"][res]["parentDigest"]
+                                );
+                                savePDF(pdf, dict["changes"]["adds"][res]["displayName"]);
                             }
                             else
                             {
@@ -122,6 +139,18 @@ namespace ConsoleApplication1
             {
                 try
                 {
+                    if (options.Verbose)
+                    {
+                        Console.WriteLine(options.ActionCommand);
+                        Console.WriteLine(options.ActionHost);
+                        Console.WriteLine(options.ActionPort);
+                        Console.WriteLine(options.ActionCertificate);
+                        Console.WriteLine(options.ActionCertificatePassword);
+                        Console.WriteLine(options.ActionUsername);
+                        Console.WriteLine(options.ActionPassword);
+                        Console.WriteLine(options.ActionNrlFile);
+                    }
+
                     byte[] cert = System.IO.File.ReadAllBytes(options.ActionCertificate);
 
                     work = new doWork(
@@ -139,43 +168,54 @@ namespace ConsoleApplication1
                     }
                     System.Console.WriteLine();
 
-                    // consume Options instance properties
-                    if (options.Verbose)
+                    if (options.ActionCommand == "nrl")
                     {
-                        Console.WriteLine(options.ActionCommand);
-                        Console.WriteLine(options.ActionHost);
-                        Console.WriteLine(options.ActionPort);
-                        Console.WriteLine(options.ActionCertificate);
-                        Console.WriteLine(options.ActionUsername);
-                        Console.WriteLine(options.ActionPassword);
-                        Console.WriteLine(options.MaximumLength);
-                    }
-                    else if (options.ActionCommand == "nrl")
-                    {
-                        work.GetNrl(
-                            options.ActionHost,
-                            options.ActionPort
-                        );
+                        if (options.ActionNrlFile != null)
+                        {
+                            using (StreamReader inputStreamReader = new System.IO.StreamReader(options.ActionNrlFile))
+                            {
+                                // make sure bogus files don't get too far
+                                int counter = 10;
+                                String nrlContents;
+                                while ((nrlContents = inputStreamReader.ReadLine()) != null && counter > 0)
+                                {
+                                    counter--;
+                                    if (nrlContents.StartsWith("!nrtdms") == true)
+                                    {
+                                        // drop the .nrl suffix.
+
+                                        String filename = work.getFilename(nrlContents, null);
+                                        Stream pdf = work.GetDocId(nrlContents, filename, null);
+                                        savePDF(pdf, filename);
+
+                                    }
+                                }
+                            }
+
+                        }
+                        else
+                        {
+                            Console.WriteLine("You did not specify a docid");
+                        }
                     }
                     else if (options.ActionCommand == "docid")
                     {
-                        /*
-                         * work.GetDocId(
-                            options.ActionHost, 
-                            options.ActionPort, 
-                            options.ActionUsername, 
-                            options.ActionPassword, 
-                            options.ActionDocid
-                        );
-                         * */
+                        if (options.ActionDocid != null)
+                        {
+                            String filename = work.getFilename(options.ActionDocid, null);
+                            Stream pdf = work.GetDocId(options.ActionDocid, filename, null);
+                            savePDF(pdf, filename);
+                        }
+                        else
+                        {
+                            Console.WriteLine("You did not specify a docid");
+                        }
                     }
                     else if (options.ActionCommand == "list")
                     {
                         //start by fetching the root, while being at the root level. Meaning back doesn't go any further back..
                         getListings("ROOT");
                     }
-                    else
-                        Console.WriteLine("working ...");
                 }
                 catch (Exception e)
                 {
@@ -185,20 +225,21 @@ namespace ConsoleApplication1
             }
             else
             {
-                doTests d = new doTests();
                 byte[] mycert = System.IO.File.ReadAllBytes( "e:\\mobile helix\\mycert.p12" );
                 work = new doWork(mycert , "coverity", "192.168.1.113", "8082", "ilya", "helix,41");
-                getListings( "ROOT" );
+                options.ActionDocid = "!nrtdms:0:!session:DMSIDOL:!database:Active:!document:32967,1:";
+                if (options.ActionDocid != null)
+                {
+                    String filename = work.getFilename(options.ActionDocid, null);
+                    Stream pdf = work.GetDocId(options.ActionDocid, filename, null);
+                    savePDF(pdf, filename);
+                }
+                else
+                {
+                    Console.WriteLine("You did not specify a docid");
+                }
 
-                //d.test1();
             }
-
         }
-
-        
-        
-        
-        
-        
     }
 }

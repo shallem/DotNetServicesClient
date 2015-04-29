@@ -36,11 +36,11 @@ namespace ConsoleApplication1
         [Option('w', "password", Required = true, HelpText = "password")]
         public string ActionPassword { get; set; }
 
-        [Option("length", DefaultValue = -1, HelpText = "The maximum number of bytes to process.")]
-        public int MaximumLength { get; set; }
-
         [Option('d', "docid", HelpText = "Document ID for 'docid' command")]
         public string ActionDocid { get; set; }
+
+        [Option('l', "nrlFile", HelpText = "NRL source for the 'nrl' command")]
+        public string ActionNrlFile { get; set; }
 
         [Option('v', null, HelpText = "Print details during execution.")]
         public bool Verbose { get; set; }
@@ -52,7 +52,7 @@ namespace ConsoleApplication1
             //  or using HelpText.AutoBuild
             var usage = new StringBuilder();
             usage.AppendLine("Mobile Helix CLI Tool v" + version);
-            usage.AppendLine("Must specify (c)ommand, (h)ost, (p)ort, ce(r)tificate path, user(n)ame, and pass(w)ord.");
+            usage.AppendLine("Must specify \n (c)ommand \n (h)ost \n (p)ort \n ce(r)tificate \n certificatePassw(o)rd \n user(n)ame \n pass(w)ord. \nParameters are specified like this:  -h http://host -p port etc.\n If specifying command=nrl you must also provide nr(l)File.\n If specifying command=docid you must also provide (d)ocid");
             return usage.ToString();
         }
     }

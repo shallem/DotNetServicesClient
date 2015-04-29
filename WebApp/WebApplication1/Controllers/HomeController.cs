@@ -53,10 +53,14 @@ namespace WebApplication1.Controllers
                 return null;
             }
             try{
+
                 // when pulling up doc by docid or NRL
                 if (parentDigest == null)
                     parentDigest = (string)(Session["rootid"]);
 
+                if ( fileName == null)
+                    fileName = work.getFilename(docid, null);
+                
                 Stream docStream = work.GetDocId(docid, fileName, parentDigest);
                 byte[] thePDF;
                 using (var streamReader = new MemoryStream())
