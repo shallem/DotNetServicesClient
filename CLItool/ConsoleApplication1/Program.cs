@@ -231,7 +231,7 @@ namespace ConsoleApplication1
                 
                 /* 
                 byte[] mycert = System.IO.File.ReadAllBytes( "C:\\Users\\server\\Downloads\\mobilehelixpoc-admin.p12" );
-                work = new doWork("Default", "mobilehelixpoc", mycert , "coverity", "192.168.1.113", "8082", "ilya", "helix,41");
+                work = new doWork("region", "client name (e.g. whiteandcase)", mycert , "cert password", "controller host", "controller port (e.g. 8082)", "username", "mypassword");
                 getListings("ROOT");
                 */
                 /*
