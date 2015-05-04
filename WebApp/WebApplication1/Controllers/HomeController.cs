@@ -141,6 +141,13 @@ namespace WebApplication1.Controllers
                 var dict = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>( ret );
                 mobileHelixItems myItem;
                 List< mobileHelixItems > items = new List<mobileHelixItems>();
+
+                if (dict["changes"] == null)
+                {
+                    ViewBag.message = "This folder is empty";
+                    return View(items);
+                }
+
                 foreach (dynamic item in dict["changes"]["adds"])
                 {
                     myItem = new mobileHelixItems();
@@ -163,9 +170,9 @@ namespace WebApplication1.Controllers
 
         
 
-        public ActionResult init(HttpPostedFileBase file, string certpassword, string h, string port, string user, string pass)
+        public ActionResult init(HttpPostedFileBase file, string certpassword, string h, string port, string user, string pass, string region, string client)
         {
-            Console.WriteLine( "certpassword: " + certpassword + " h: " + h + " port: " + port + " user: " + user + " pass: " + pass);
+            
             if (initFunction() == true)
             {
                 return RedirectToAction("index", "home", null);
@@ -178,7 +185,7 @@ namespace WebApplication1.Controllers
                     BinaryReader b = new BinaryReader(file.InputStream);
                     byte[] cert = b.ReadBytes( (int) file.InputStream.Length);
                     Session["certificate"] = cert;
-                    doWork work = new doWork(cert, certpassword, h, port, user, pass);
+                    doWork work = new doWork(region, client, cert, certpassword, h, port, user, pass);
                     String[] session = work.getSession( user, pass);
 
                     Session["userName"] = user;

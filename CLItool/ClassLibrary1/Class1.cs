@@ -17,7 +17,7 @@ namespace MobileHelixUtility
     // just for getting started
     public class Class1
     {
-        private String version = "0.15";
+        private String version = "0.17";
         public String getVersion(){
             return version;
         }
@@ -31,11 +31,18 @@ namespace MobileHelixUtility
         private String host = null;
         private String ctrl_port = null;
         private String apps_port = null;
+        private string client = "whiteandcase";
+        private string region = "New York";
         String[] session = null;
 
         //this one is used by the CLI - since we can keep the session[] in memory while the program runs
-        public doWork(byte[] certificate, string certPassword, string h, string port, string user, string pass )
+        public doWork(string theRegion, string theClient, byte[] certificate, string certPassword, string h, string port, string user, string pass )
         {
+            if (theClient != null)
+                client = theClient;
+            if (theRegion != null)
+                region = theRegion;
+            
             cert = certificate;
             certpass = certPassword;
             host = h;
@@ -120,34 +127,59 @@ namespace MobileHelixUtility
                 try
                 {
                     string postString = "{" +
-                            "\"deviceRegion\" : \"Default\"," +
-                            "\"client\" : \"mobilehelixpoc\"," +
+                            "\"deviceRegion\" : \"" + region + "\"," +
+                            "\"client\" : \"" + client + "\"," +
                             "\"userID\" : \"" + user + "\"," +
                             "\"password\" : \"" + password + "\"}";
 
                     String uri = "https://" + host + ":" + ctrl_port + "/ws/restricted/session";
+
                     HttpWebResponse Response = doPOST(uri, postString);
-                    // Print the repsonse headers.
-                    //Console.WriteLine("{0}", Response.Headers);
-                    //Console.WriteLine();
-                    // Get the certificate data.
+                    
                     StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
                     JavaScriptSerializer js = new JavaScriptSerializer();
-                    //var obj = js.Deserialize<dynamic>(sr.ReadToEnd());
-                    var dict = js.Deserialize<Dictionary<string, dynamic>>(sr.ReadToEnd());
+                    String output = sr.ReadToEnd();
+                    Console.WriteLine("Output from session: " + output);
+                    var dict = js.Deserialize<Dictionary<string, dynamic>>(output);
+                    if (dict == null)
+                    {
+                        Console.WriteLine("Session creation returned null. Session create failed.");
+                        return null;
+                    }
                     var status = dict["msg"];
                     if (String.Compare("success", status, true) == 0)
                     {
                         retVal = new String[2];
                         retVal[0] = dict["sessionID"];
                         Console.WriteLine("Session id: " + retVal[0]);
-                        foreach (Dictionary<string, dynamic> app in dict["apps"])
+                        if ( dict["apps"] == null)
                         {
+                            Console.WriteLine("There are no apps configured. Session create failed.");
+                            return null;
+                        }
+                        
+                        // if there is only 1 app:
+                        if (dict["apps"]["appType"] != null)
+                        {
+                            Console.WriteLine(" Processing app of type: " + Convert.ToInt32(dict["apps"]["appType"]));
                             // find the first app that is of type 8 (file box type)
-                            if (Convert.ToInt32(app["appType"]) == 8)
+                            if (Convert.ToInt32(dict["apps"]["appType"]) == 8)
                             {
-                                retVal[1] = app["uniqueID"]; //unique ID of the app we will use to access WorkSite
-                                break;
+                                retVal[1] = dict["apps"]["uniqueID"]; //unique ID of the app we will use to access WorkSite
+                                return retVal;
+                            }
+                        }
+                        else //if there are more than 1 apps
+                        {
+                            foreach (Dictionary<string, dynamic> app in dict["apps"])
+                            {
+                                Console.WriteLine(" Processing app of type: " + Convert.ToInt32(app["appType"]));
+                                // find the first app that is of type 8 (file box type)
+                                if (Convert.ToInt32(app["appType"]) == 8)
+                                {
+                                    retVal[1] = app["uniqueID"]; //unique ID of the app we will use to access WorkSite
+                                    break;
+                                }
                             }
                         }
                         return retVal;
@@ -158,7 +190,8 @@ namespace MobileHelixUtility
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine("Exception: " + e.Message);
+                    Console.WriteLine("Sorry. There is a problem with the app configurations in Mobile Helix App Server.");
                     return null;
                 }
             }
@@ -176,15 +209,16 @@ namespace MobileHelixUtility
                     Uri.EscapeDataString(session[1]) + "&sessionid=" + Uri.EscapeDataString(session[0]);
 
                 HttpWebResponse Response = doGET(uri);
-                // Print the repsonse headers.
-                //Console.WriteLine("{0}", Response.Headers);
-                //Console.WriteLine();
-                // Get the certificate data.
                 StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
                 JavaScriptSerializer js = new JavaScriptSerializer();
-                //var obj = js.Deserialize<dynamic>(sr.ReadToEnd());
+
                 var ret = sr.ReadToEnd();
                 var dict = js.Deserialize<Dictionary<string, dynamic>>(ret);
+                if (dict == null)
+                {
+                    Console.WriteLine("getroots returned null.");
+                    return null;
+                }
                 var status = dict["msg"];
                 if (String.Compare("success", status, true) == 0)
                 {
@@ -219,10 +253,6 @@ namespace MobileHelixUtility
                     "&target=" + Uri.EscapeDataString(target);
 
                 HttpWebResponse Response = doGET(uri);
-                // Print the repsonse headers.
-                //Console.WriteLine("{0}", Response.Headers);
-                //Console.WriteLine();
-                // Get the certificate data.
                 return Response.GetResponseStream();
             }
             catch (Exception e)

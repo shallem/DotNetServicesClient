@@ -20,7 +20,14 @@ namespace ConsoleApplication1
         // used to save the PDF locally
         private static bool savePDF(Stream pdf, String tempname)
         {
+            // add .pdf if not already there
+            // TODO: add additional logic for specific extensions, since some files come throug as raw files. Images for example..
+            if (tempname.EndsWith(".pdf", true, null) == false)
+            {
+                tempname += ".pdf";
+            }
             string FILE_PATH = Directory.GetCurrentDirectory() + "\\" + tempname;
+           
             Console.WriteLine("Saving PDF " + FILE_PATH);
             try
             {
@@ -135,25 +142,21 @@ namespace ConsoleApplication1
             Class1 f = new Class1();
             String v = f.getVersion();
             var options = new Options( v );
+            options.GetUsage();
             if (CommandLine.Parser.Default.ParseArguments(args, options))
             {
                 try
                 {
                     if (options.Verbose)
                     {
-                        Console.WriteLine(options.ActionCommand);
-                        Console.WriteLine(options.ActionHost);
-                        Console.WriteLine(options.ActionPort);
-                        Console.WriteLine(options.ActionCertificate);
-                        Console.WriteLine(options.ActionCertificatePassword);
-                        Console.WriteLine(options.ActionUsername);
-                        Console.WriteLine(options.ActionPassword);
-                        Console.WriteLine(options.ActionNrlFile);
+                        // TODO
                     }
 
                     byte[] cert = System.IO.File.ReadAllBytes(options.ActionCertificate);
 
                     work = new doWork(
+                        options.ActionRegion,
+                        options.ActionClient,
                         cert,
                         options.ActionCertificatePassword,
                         options.ActionHost,
@@ -225,8 +228,13 @@ namespace ConsoleApplication1
             }
             else
             {
-                byte[] mycert = System.IO.File.ReadAllBytes( "e:\\mobile helix\\mycert.p12" );
-                work = new doWork(mycert , "coverity", "192.168.1.113", "8082", "ilya", "helix,41");
+                
+                /* 
+                byte[] mycert = System.IO.File.ReadAllBytes( "C:\\Users\\server\\Downloads\\mobilehelixpoc-admin.p12" );
+                work = new doWork("Default", "mobilehelixpoc", mycert , "coverity", "192.168.1.113", "8082", "ilya", "helix,41");
+                getListings("ROOT");
+                */
+                /*
                 options.ActionDocid = "!nrtdms:0:!session:DMSIDOL:!database:Active:!document:32967,1:";
                 if (options.ActionDocid != null)
                 {
@@ -238,7 +246,8 @@ namespace ConsoleApplication1
                 {
                     Console.WriteLine("You did not specify a docid");
                 }
-
+                */
+                 
             }
         }
     }

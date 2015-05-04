@@ -10,13 +10,19 @@ namespace ConsoleApplication1
 
     class Options
     {
-        private String version = "0.05";
+        private String version = "0.01";
         public Options(String v)
         {
             version = v;
         }
         [Option('c', "command", Required = true, DefaultValue = "nrl", HelpText = "Specify command: nrl | docid | list | test")]
         public string ActionCommand { get; set; }
+
+        [Option('i', "client", Required = false, HelpText = "Controller Client name")]
+        public string ActionClient { get; set; }
+
+        [Option('e', "region", Required = false, HelpText = "Appserver Region")]
+        public string ActionRegion { get; set; }
 
         [Option('h', "host", Required = true, HelpText = "Server host/ip")]
         public string ActionHost { get; set; }
@@ -52,7 +58,7 @@ namespace ConsoleApplication1
             //  or using HelpText.AutoBuild
             var usage = new StringBuilder();
             usage.AppendLine("Mobile Helix CLI Tool v" + version);
-            usage.AppendLine("Must specify \n (c)ommand \n (h)ost \n (p)ort \n ce(r)tificate \n certificatePassw(o)rd \n user(n)ame \n pass(w)ord. \nParameters are specified like this:  -h http://host -p port etc.\n If specifying command=nrl you must also provide nr(l)File.\n If specifying command=docid you must also provide (d)ocid");
+            usage.AppendLine("Must specify \n (c)ommand \n (h)ost \n (p)ort \n ce(r)tificate \n certificatePassw(o)rd \n user(n)ame \n pass(w)ord. \nParameters are specified like this:  -h http://host -p port etc.\n If specifying command=nrl you must also provide nr(l)File.\n If specifying command=docid you must also provide (d)ocid\n\nOptional:\n Cl(i)ent\n R(e)gion");
             return usage.ToString();
         }
     }
