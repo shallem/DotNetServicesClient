@@ -139,7 +139,9 @@ namespace MobileHelixUtility
                     StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
                     JavaScriptSerializer js = new JavaScriptSerializer();
                     String output = sr.ReadToEnd();
-                    Console.WriteLine("Output from session: " + output);
+                    
+                    //Console.WriteLine("Output from session: " + output);
+                    
                     var dict = js.Deserialize<Dictionary<string, dynamic>>(output);
                     if (dict == null)
                     {
@@ -213,6 +215,9 @@ namespace MobileHelixUtility
                 JavaScriptSerializer js = new JavaScriptSerializer();
 
                 var ret = sr.ReadToEnd();
+                
+                //Console.WriteLine(ret);
+                
                 var dict = js.Deserialize<Dictionary<string, dynamic>>(ret);
                 if (dict == null)
                 {
@@ -392,17 +397,22 @@ namespace MobileHelixUtility
             //start at "ROOT" first
             if (digest == null || digest == "")
                 digest = "ROOT";
-
+            Console.WriteLine("digest: " + digest);
             String[] root = null; 
             if (session != null && session.Length == 2)
             {
                 root = getRoots(session);
                 if (root != null)
                 {
+                    Console.WriteLine("root[0] = " + root[0] );
+
                     var sync = getSyncdir(session, root[0], digest);
                     StreamReader sr = new StreamReader(sync, Encoding.Default);
                     JavaScriptSerializer js = new JavaScriptSerializer();
                     var ret = sr.ReadToEnd();
+
+                    //Console.WriteLine(ret);
+                    
                     var dict = js.Deserialize<Dictionary<string, dynamic>>(ret);
                     var status = dict["msg"];
                     if (String.Compare("success", status, true) == 0)
