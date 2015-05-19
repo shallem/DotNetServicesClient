@@ -159,20 +159,18 @@ namespace MobileHelixUtility
                             Console.WriteLine("There are no apps configured. Session create failed.");
                             return null;
                         }
-                        
-                        // if there is only 1 app:
-                        if (dict["apps"]["appType"] != null)
-                        {
-                            Console.WriteLine(" Processing app of type: " + Convert.ToInt32(dict["apps"]["appType"]));
+
+                        try { 
+                            // if there is only 1 app:
+                            Dictionary<string, dynamic> item = dict["apps"];
+                            Console.WriteLine(" Processing app of type: " + Convert.ToInt32(item["appType"]));
                             // find the first app that is of type 8 (file box type)
-                            if (Convert.ToInt32(dict["apps"]["appType"]) == 8)
+                            if (Convert.ToInt32(item["appType"]) == 8)
                             {
-                                retVal[1] = dict["apps"]["uniqueID"]; //unique ID of the app we will use to access WorkSite
+                                retVal[1] = item["uniqueID"]; //unique ID of the app we will use to access WorkSite
                                 return retVal;
                             }
-                        }
-                        else //if there are more than 1 apps
-                        {
+                        } catch ( Exception e){
                             foreach (Dictionary<string, dynamic> app in dict["apps"])
                             {
                                 Console.WriteLine(" Processing app of type: " + Convert.ToInt32(app["appType"]));
