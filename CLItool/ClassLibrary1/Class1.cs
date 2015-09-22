@@ -29,14 +29,15 @@ namespace MobileHelixUtility
         byte[] cert;
         private String certpass = null;
         private String host = null;
-        private String ctrl_port = null;
-        private String apps_port = null;
-        private string client = "whiteandcase";
-        private string region = "New York";
+        private String ctrl_port = "8082";
+        private String apps_host = null;
+        private String apps_port = "8282";
+        private string client = "whiteandcaselink";
+        private string region = "Default";
         String[] session = null;
 
         //this one is used by the CLI - since we can keep the session[] in memory while the program runs
-        public doWork(string theRegion, string theClient, byte[] certificate, string certPassword, string h, string port, string user, string pass )
+        public doWork(string theRegion, string theClient, byte[] certificate, string certPassword, string h, string port, string appsh, string appsport, string user, string pass)
         {
             if (theClient != null)
                 client = theClient;
@@ -46,19 +47,21 @@ namespace MobileHelixUtility
             cert = certificate;
             certpass = certPassword;
             host = h;
+            apps_host = appsh;
             ctrl_port = port;
-            apps_port = (Int32.Parse(port) + 200).ToString();
+            apps_port = appsport;
             session = getSession(user, pass);
         }
 
         // this one is used by the webapp - it needs to provide session[] each time the page reloads
-        public doWork(string[] sess, byte[] certificate, string certPassword, string h, string port, string user, string pass)
+        public doWork(string[] sess, byte[] certificate, string certPassword, string h, string port, string appsh, string appsport, string user, string pass)
         {
             cert = certificate;
             certpass = certPassword;
             host = h;
             ctrl_port = port;
-            apps_port = (Int32.Parse(port) + 200).ToString();
+            apps_host = appsh;
+            apps_port = appsport;
             session = sess;
         }
 
@@ -205,7 +208,7 @@ namespace MobileHelixUtility
             try
             {
 
-                String uri = "https://" + host + ":" + apps_port + "/clientws/files/getroots?appid=" + 
+                String uri = "https://" + apps_host + ":" + apps_port + "/clientws/files/getroots?appid=" + 
                     Uri.EscapeDataString(session[1]) + "&sessionid=" + Uri.EscapeDataString(session[0]);
 
                 HttpWebResponse Response = doGET(uri);
@@ -249,7 +252,7 @@ namespace MobileHelixUtility
             {
 
                 String uri =
-                    "https://" + host + ":" + apps_port + 
+                    "https://" + apps_host + ":" + apps_port + 
                     "/clientws/files/syncdir?appid=" + Uri.EscapeDataString(session[1]) + 
                     "&digest=" + Uri.EscapeDataString(digest) + 
                     "&sessionid=" + Uri.EscapeDataString(session[0]) + 
@@ -278,7 +281,7 @@ namespace MobileHelixUtility
                 }
                 try
                 {
-                    String uri = "https://" + host + ":" + apps_port +
+                    String uri = "https://" + apps_host + ":" + apps_port +
                                "/clientws/files/getfileinfo?appid=" +
                                Uri.EscapeDataString(session[1]) +
                                "&digest=" + Uri.EscapeDataString(location) +
@@ -322,7 +325,7 @@ namespace MobileHelixUtility
                             filename.Length > 0
                         )
                     {
-                        uri = "https://" + host + ":" + apps_port +
+                        uri = "https://" + apps_host + ":" + apps_port +
                             "/clientws/files/getfileview?appid=" +
                             Uri.EscapeDataString(session[1]) +
                             "&digest=" + Uri.EscapeDataString(location) +
@@ -332,7 +335,7 @@ namespace MobileHelixUtility
                     }
                     else
                     {
-                        uri = "https://" + host + ":" + apps_port +
+                        uri = "https://" + apps_host + ":" + apps_port +
                             "/clientws/files/getfileview?appid=" +
                             Uri.EscapeDataString(session[1]) +
                             "&digest=" + Uri.EscapeDataString(location) +

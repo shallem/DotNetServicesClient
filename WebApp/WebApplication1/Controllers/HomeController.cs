@@ -27,19 +27,30 @@ namespace WebApplication1.Controllers
                 String certpass = (string)(Session["certpass"]);
                 string h = (string)(Session["host"]);
                 string p = (string)(Session["port"]);
+                string a = (string)(Session["apps_host"]);
+                string s = (string)(Session["apps_port"]);
                 string u = (string)(Session["userName"]);
                 string pass = (string)(Session["password"]);
 
-                work = new doWork(
-                    session,
-                    cert,
-                    certpass,
-                    h,
-                    p,
-                    u,
-                    pass
-                );
-                return true;
+                if (h != null && a != null)
+                {
+                    work = new doWork(
+                        session,
+                        cert,
+                        certpass,
+                        h,
+                        p,
+                        a,
+                        s,
+                        u,
+                        pass
+                    );
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             } catch(Exception e){
                 return false;
             }
@@ -170,7 +181,7 @@ namespace WebApplication1.Controllers
 
         
 
-        public ActionResult init(HttpPostedFileBase file, string certpassword, string h, string port, string user, string pass, string region, string client)
+        public ActionResult init(HttpPostedFileBase file, string certpassword, string h, string port, string apps_host, string apps_port, string user, string pass, string region, string client)
         {
             
             if (initFunction() == true)
@@ -185,7 +196,7 @@ namespace WebApplication1.Controllers
                     BinaryReader b = new BinaryReader(file.InputStream);
                     byte[] cert = b.ReadBytes( (int) file.InputStream.Length);
                     Session["certificate"] = cert;
-                    doWork work = new doWork(region, client, cert, certpassword, h, port, user, pass);
+                    doWork work = new doWork(region, client, cert, certpassword, h, port, apps_host, apps_port, user, pass);
                     String[] session = work.getSession( user, pass);
 
                     Session["userName"] = user;
@@ -194,7 +205,8 @@ namespace WebApplication1.Controllers
                     Session["appid"] = session[1];
                     Session["host"] = h ;
                     Session["port"] = port;
-
+                    Session["apps_host"] = apps_host;
+                    Session["apps_port"] = apps_port;
                     string theCert = Encoding.UTF8.GetString(cert);
                     Session["cert"] = theCert;
                     Session["certpass"] = certpassword;

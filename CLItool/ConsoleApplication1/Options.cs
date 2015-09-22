@@ -10,12 +10,12 @@ namespace ConsoleApplication1
 
     class Options
     {
-        private String version = "0.01";
+        private String version = "0.05";
         public Options(String v)
         {
             version = v;
         }
-        [Option('c', "command", Required = true, DefaultValue = "nrl", HelpText = "Specify command: nrl | docid | list | test")]
+        [Option('c', "command", Required = true, DefaultValue = "list", HelpText = "Specify command: nrl | docid | list | test")]
         public string ActionCommand { get; set; }
 
         [Option('i', "client", Required = false, HelpText = "Controller Client name")]
@@ -27,8 +27,14 @@ namespace ConsoleApplication1
         [Option('h', "host", Required = true, HelpText = "Server host/ip")]
         public string ActionHost { get; set; }
 
-        [Option('p', "port", Required = true, HelpText = "port")]
+        [Option('p', "port", Required = true, HelpText = "Controller port")]
         public string ActionPort { get; set; }
+
+        [Option('a', "appshost", Required = true, HelpText = "Appserver host/ip")]
+        public string AppsHost { get; set; }
+
+        [Option('s', "appsport", Required = true, HelpText = "Appserver port")]
+        public string AppsPort { get; set; }
 
         [Option('r', "certificate", Required = true, HelpText = "certificate path")]
         public string ActionCertificate { get; set; }
@@ -58,7 +64,7 @@ namespace ConsoleApplication1
             //  or using HelpText.AutoBuild
             var usage = new StringBuilder();
             usage.AppendLine("Mobile Helix CLI Tool v" + version);
-            usage.AppendLine("Must specify \n (c)ommand \n (h)ost \n (p)ort \n ce(r)tificate \n certificatePassw(o)rd \n user(n)ame \n pass(w)ord. \nParameters are specified like this:  -h http://host -p port etc.\n If specifying command=nrl you must also provide nr(l)File.\n If specifying command=docid you must also provide (d)ocid\n\nOptional:\n Cl(i)ent\n R(e)gion");
+            usage.AppendLine("Must specify \n (c)ommand \n (h)ost \n (p)ort \n (a)ppserver host\n app(s)erver port\n ce(r)tificate \n certificatePassw(o)rd \n user(n)ame \n pass(w)ord. \nParameters are specified like this:  -h http://host -p port etc.\n If specifying command=nrl you must also provide nr(l)File.\n If specifying command=docid you must also provide (d)ocid\n\nOptional:\n Cl(i)ent\n R(e)gion");
             return usage.ToString();
         }
     }

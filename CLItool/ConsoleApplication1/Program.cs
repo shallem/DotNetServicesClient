@@ -250,6 +250,8 @@ namespace ConsoleApplication1
                         options.ActionCertificatePassword,
                         options.ActionHost,
                         options.ActionPort,
+                        options.AppsHost,
+                        options.AppsPort,
                         options.ActionUsername,
                         options.ActionPassword
                     );
