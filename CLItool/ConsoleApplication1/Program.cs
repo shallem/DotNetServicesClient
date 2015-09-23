@@ -324,7 +324,8 @@ namespace ConsoleApplication1
                 byte[] mycert = System.IO.File.ReadAllBytes( "e:\\mobile helix\\mobilehelixpoc-admin.p12" );
                 work = new doWork("region", "client name (e.g. whiteandcase)", mycert , "cert password", "controller host", "controller port (e.g. 8082)", "username", "mypassword");
                 getListings("ROOT");
-                */
+                
+                 */
                 
                 /*
                 options.ActionDocid = "!nrtdms:0:!session:DMSIDOL:!database:Active:!document:32967,1:";
