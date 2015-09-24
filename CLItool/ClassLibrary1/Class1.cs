@@ -365,8 +365,7 @@ namespace MobileHelixUtility
             {
                 // if filename is blank, need to find it
                 if (
-                    location == null ||
-                    location.Length > 0
+                    location == null 
                    )
                 {
                     location = "ROOT";

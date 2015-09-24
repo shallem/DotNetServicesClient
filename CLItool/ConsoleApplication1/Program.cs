@@ -372,11 +372,10 @@ namespace ConsoleApplication1
 
                 /*
                 byte[] mycert = System.IO.File.ReadAllBytes( "d:\\demo-il.ya.p12" );
-                //work = new doWork("region", "client name (e.g. whiteandcase)", mycert , "cert password", "controller host", "controller port (e.g. 8082)", "username", "mypassword");
-                
+                //work = new doWork("region", "client name (e.g. whiteandcase)", mycert , "cert password", "controller host", "controller port (e.g. 8082)", "appserver host", "appserver port", "username", "mypassword");
                 while ( getListings("ROOT") != 0 );
                 */
-                
+
                 /*
                 options.ActionDocid = "!nrtdms:0:!session:DMSIDOL:!database:Active:!document:32967,1:";
                 if (options.ActionDocid != null)
