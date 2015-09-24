@@ -54,9 +54,16 @@ namespace ConsoleApplication1
         }
 
         // where: fetch listing for this location
-        private static void getListings( string where )
+        //return -1 = error
+        //return 0 = all good, all done
+        //return 1 = start over - re-list the roots again
+        static private int getListings( string where )
         {
             Console.WriteLine("getListings called for " + where);
+            //clearn the currentRoot as we may be selecting a different root (in case there are multiple resoruces in one app)
+            if ( where == "ROOT")
+                work.clearCurrentRoot();
+
             String startingList = work.GetListing( where );
             if (startingList.StartsWith("error") == false)
             {
@@ -66,8 +73,51 @@ namespace ConsoleApplication1
                 
                 //this is the current directory listing contents
                 var dict = js.Deserialize<Dictionary<string, dynamic>>(startingList);
-                
+                if (dict == null)
+                    return -1; //error!!
+
                 int counter = 0;
+                List<String[]> theRoots = new List<String[]>();
+
+                //ok - are we getting back multiple roots? If yes, there will be a "roots" key
+                if ( dict.ContainsKey("roots")){
+                    //we need to print all roots - as long as they have a prop.containsKey["26"] - that's the unique resource ID we need
+                    int i = 1;
+                    foreach (Dictionary<string, dynamic> r in dict["roots"])
+                    {
+                        var props = js.Deserialize<Dictionary<string, dynamic>>(r["props"]);
+                        if (props.ContainsKey("26"))
+                        {
+                            String[] s = new String[2];
+                            s[0] = r["digest"];
+                            s[1] = props["26"];
+                            Console.WriteLine(i + ": " + s[0] + " - " + s[1]);
+                            theRoots.Add(s);
+                            i++;
+                        }
+                    }
+                    while (String.Compare("x", wait, true) != 0)
+                    {
+                        Console.WriteLine("X to go back, or select item by number");
+                        Console.WriteLine("");
+
+                        wait = Console.ReadLine();
+                        if (String.Compare("X", wait, true) == 0)
+                            return 0; //all done
+
+                        int res = 0;
+                        if (Int32.TryParse(wait, out res) == true)
+                        {
+                            if (res > 0 && res < i)
+                            {
+                                String tempRootList = work.GetRootListing(theRoots[res - 1]);
+                                dict = js.Deserialize<Dictionary<string, dynamic>>(tempRootList);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
                 if (dict["changes"] == null)
                 {
                     Console.WriteLine(" empty ");
@@ -127,7 +177,7 @@ namespace ConsoleApplication1
                 {
                     wait = Console.ReadLine();
                     if (String.Compare("x", wait, true) == 0)
-                        return;
+                        return 1; //go back to the top folks!
 
                     int res = 0;
                     if (Int32.TryParse(wait, out res) == true)
@@ -224,7 +274,7 @@ namespace ConsoleApplication1
                     }
                 }
             }
-
+            return 1;
         }
         static void Main(string[] args)
         {
@@ -308,7 +358,7 @@ namespace ConsoleApplication1
                     else if (options.ActionCommand == "list")
                     {
                         //start by fetching the root, while being at the root level. Meaning back doesn't go any further back..
-                        getListings("ROOT");
+                        while (getListings("ROOT") != 0) ;
                     }
                 }
                 catch (Exception e)
@@ -319,13 +369,13 @@ namespace ConsoleApplication1
             }
             else
             {
-                
+
                 /*
-                byte[] mycert = System.IO.File.ReadAllBytes( "e:\\mobile helix\\mobilehelixpoc-admin.p12" );
-                work = new doWork("region", "client name (e.g. whiteandcase)", mycert , "cert password", "controller host", "controller port (e.g. 8082)", "username", "mypassword");
-                getListings("ROOT");
+                byte[] mycert = System.IO.File.ReadAllBytes( "d:\\demo-il.ya.p12" );
+                //work = new doWork("region", "client name (e.g. whiteandcase)", mycert , "cert password", "controller host", "controller port (e.g. 8082)", "username", "mypassword");
                 
-                 */
+                while ( getListings("ROOT") != 0 );
+                */
                 
                 /*
                 options.ActionDocid = "!nrtdms:0:!session:DMSIDOL:!database:Active:!document:32967,1:";
