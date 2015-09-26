@@ -1,0 +1,14 @@
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\ConsoleApplication1.exe.config
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\ConsoleApplication1.exe
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\ConsoleApplication1.pdb
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\ClassLibrary1.dll
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\CommandLine.dll
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\Newtonsoft.Json.dll
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\System.Net.Http.Formatting.dll
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\ClassLibrary1.pdb
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\CommandLine.xml
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\Newtonsoft.Json.xml
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\bin\Release\System.Net.Http.Formatting.xml
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\obj\Release\ConsoleApplication1.csprojResolveAssemblyReference.cache
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\obj\Release\ConsoleApplication1.exe
+C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ConsoleApplication1\obj\Release\ConsoleApplication1.pdb

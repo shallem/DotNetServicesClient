@@ -274,7 +274,7 @@ namespace ConsoleApplication1
                     }
                 }
             }
-            return 1;
+            return -1;
         }
         static void Main(string[] args)
         {
@@ -358,7 +358,7 @@ namespace ConsoleApplication1
                     else if (options.ActionCommand == "list")
                     {
                         //start by fetching the root, while being at the root level. Meaning back doesn't go any further back..
-                        while (getListings("ROOT") != 0) ;
+                        while (getListings("ROOT") > 0) ;
                     }
                 }
                 catch (Exception e)
@@ -370,11 +370,11 @@ namespace ConsoleApplication1
             else
             {
 
-                /*
+              
                 byte[] mycert = System.IO.File.ReadAllBytes( "d:\\demo-il.ya.p12" );
                 //work = new doWork("region", "client name (e.g. whiteandcase)", mycert , "cert password", "controller host", "controller port (e.g. 8082)", "appserver host", "appserver port", "username", "mypassword");
-                while ( getListings("ROOT") != 0 );
-                */
+                while ( getListings("ROOT") > 0 );
+                
 
                 /*
                 options.ActionDocid = "!nrtdms:0:!session:DMSIDOL:!database:Active:!document:32967,1:";
