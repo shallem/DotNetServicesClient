@@ -349,16 +349,15 @@ namespace ConsoleApplication1
 
                 }
             }
+
             else
             {
-
-              
+                /*
                 byte[] mycert = System.IO.File.ReadAllBytes( "d:\\demo-il.ya.p12" );
                 //work = new doWork("region", "client name (e.g. whiteandcase)", mycert , "cert password", "controller host", "controller port (e.g. 8082)", "appserver host", "appserver port", "username", "mypassword");
-                work = new doWork("San Francisco", "demo", mycert, "coverity", "demo.mobilehelix.com", "8443", "54.244.253.90", "8182", "ilya", "helix,41"); 
                 while (getListings("ROOT") > 0) ;
+                */
                 
-
                 /*
                 options.ActionDocid = "!nrtdms:0:!session:DMSIDOL:!database:Active:!document:32967,1:";
                 if (options.ActionDocid != null)
@@ -374,6 +373,7 @@ namespace ConsoleApplication1
                 */
                  
             }
+            
         }
     }
 }
