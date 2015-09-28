@@ -1,0 +1,34 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Select Resource</title>
+</head>
+<body>
+    @using (Html.BeginForm("pickroot",
+                        "Home",
+                        FormMethod.Post,
+                        new { enctype = "multipart/form-data" }))
+    {
+        <label for="file">Upload client certificate file:</label>
+        <input type="file" name="file" id="file" /><br><br>
+        <input type="password" name="certpassword" placeholder="Certificate Store Password" /><br />
+        <input type="text" name="h" placeholder="Host" /><br />
+        <input type="text" name="port" placeholder="Port" /><br />
+        <input type="text" name="apps_host" placeholder="Appserver Host" /><br />
+        <input type="text" name="apps_port" placeholder="Appserver Port" /><br />
+        <input type="text" name="user" placeholder="Username" /><br />
+        <input type="password" name="pass" placeholder="Password" /><br />
+        <input type="text" name="region" value="Default" /><br />
+        <input type="text" name="client" value="whitecaselink" /><br />
+        <input type="submit" value="Go" />
+        <br><br>
+        @ViewBag.Message
+    }
+</body>
+</html>

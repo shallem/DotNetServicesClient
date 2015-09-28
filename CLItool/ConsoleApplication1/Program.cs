@@ -60,74 +60,159 @@ namespace ConsoleApplication1
         static private int getListings( string where )
         {
             Console.WriteLine("getListings called for " + where);
-            //clearn the currentRoot as we may be selecting a different root (in case there are multiple resoruces in one app)
-            if ( where == "ROOT")
-                work.clearCurrentRoot();
-
-            String startingList = work.GetListing( where );
-            if (startingList.StartsWith("error") == false)
-            {
-                // this is reading the console input
-                string wait = "";
-                JavaScriptSerializer js = new JavaScriptSerializer();
+            // this is reading the console input
+            string wait = "";
+            int counter = 0; 
+            JavaScriptSerializer js = new JavaScriptSerializer();
+            Dictionary<string, dynamic> dict = null;
+            if (where == "ROOT") { 
+                List<String[]> theRoots = work.getRoots(null); 
+                int i=1;
+                foreach (String[] s in theRoots)
+                {
+                    Console.WriteLine(i + ": " + s[0] + " - " + s[1]);
+                    i++;
+                }
                 
-                //this is the current directory listing contents
-                var dict = js.Deserialize<Dictionary<string, dynamic>>(startingList);
-                if (dict == null)
-                    return -1; //error!!
+                while (String.Compare("x", wait, true) != 0)
+                {
+                    Console.WriteLine("X to go back, or select item by number");
+                    Console.WriteLine("");
 
-                int counter = 0;
-                List<String[]> theRoots = new List<String[]>();
+                    wait = Console.ReadLine();
+                    if (String.Compare("X", wait, true) == 0)
+                        return 0; //all done
 
-                //ok - are we getting back multiple roots? If yes, there will be a "roots" key
-                if ( dict.ContainsKey("roots")){
-                    //we need to print all roots - as long as they have a prop.containsKey["26"] - that's the unique resource ID we need
-                    int i = 1;
-                    foreach (Dictionary<string, dynamic> r in dict["roots"])
+                    int res = 0;
+                    if (Int32.TryParse(wait, out res) == true)
                     {
-                        var props = js.Deserialize<Dictionary<string, dynamic>>(r["props"]);
-                        if (props.ContainsKey("26"))
+                        if (res > 0 && res < i)
                         {
-                            String[] s = new String[2];
-                            s[0] = r["digest"];
-                            s[1] = props["26"];
-                            Console.WriteLine(i + ": " + s[0] + " - " + s[1]);
-                            theRoots.Add(s);
-                            i++;
-                        }
-                    }
-                    while (String.Compare("x", wait, true) != 0)
-                    {
-                        Console.WriteLine("X to go back, or select item by number");
-                        Console.WriteLine("");
-
-                        wait = Console.ReadLine();
-                        if (String.Compare("X", wait, true) == 0)
-                            return 0; //all done
-
-                        int res = 0;
-                        if (Int32.TryParse(wait, out res) == true)
-                        {
-                            if (res > 0 && res < i)
-                            {
-                                String tempRootList = work.GetRootListing(theRoots[res - 1]);
-                                dict = js.Deserialize<Dictionary<string, dynamic>>(tempRootList);
-                                break;
-                            }
+                            String tempRootList = work.GetRootListing( theRoots[res - 1] );
+                            dict = js.Deserialize<Dictionary<string, dynamic>>(tempRootList);
+                            break;
                         }
                     }
                 }
-                
-                if (dict["changes"] == null)
-                {
-                    Console.WriteLine(" empty ");
-                }    
+            }
+            else
+            {
+                String tempRootList = work.GetListing( null, where);
+                dict = js.Deserialize<Dictionary<string, dynamic>>(tempRootList);
+            }
+
+            if (dict["changes"] == null)
+            {
+                Console.WriteLine(" empty ");
+            }    
                     
-                else
+            else
+            {
+                try
                 {
+                    // This is to cover the case where there is only 1 adds item (so it isn't an array of adds)
+                    Dictionary<string, dynamic> item = dict["changes"]["adds"];
+                    if (String.Compare("true", item["isFile"], true) == 0)
+                    {
+                        Console.WriteLine("item: " + counter + " filename: " + item["displayName"]);
+                        Console.WriteLine("id" + item["globalKey"]);
+                        Console.WriteLine("location" + item["parentDigest"]);
+                    }
+                    else
+                    {
+                        Console.WriteLine("item: " + counter + " folder: " + item["displayName"]);
+                        Console.WriteLine("key: " + item["globalKey"]);
+                    }
+                    counter++;
+                }
+                catch ( Exception e)
+                {
+                    //exception is likely because adds is an array, so let's try processing it as array
                     try
                     {
-                        // This is to cover the case where there is only 1 adds item (so it isn't an array of adds)
+                        foreach (Dictionary<string, dynamic> item in dict["changes"]["adds"])
+                        {
+                            if (String.Compare("true", item["isFile"], true) == 0)
+                            {
+                                Console.WriteLine("item: " + counter + " filename: " + item["displayName"]);
+                                Console.WriteLine("id" + item["globalKey"]);
+                                Console.WriteLine("location" + item["parentDigest"]);
+                            }
+                            else
+                            {
+                                Console.WriteLine("item: " + counter + " folder: " + item["displayName"]);
+                                Console.WriteLine("key: " + item["globalKey"]);
+                            }
+                            counter++;
+                        }
+                    }
+                    catch (Exception f)
+                    {
+                        //nope, there really is a problem here
+                        Console.WriteLine("Sorry, we hit a snag: " + f);
+                    }
+                }
+            }
+            Console.WriteLine("x to go back, or select item by number");
+            Console.WriteLine("");
+
+            while (String.Compare("x", wait, true) != 0)
+            {
+                wait = Console.ReadLine();
+                if (String.Compare("x", wait, true) == 0)
+                    return 1; //go back to the top folks!
+
+                int res = 0;
+                if (Int32.TryParse(wait, out res) == true)
+                {
+                    if (res < counter)
+                    {
+                        if (counter == 1)
+                        {
+                            //special case - adds is not an array here
+                            if (String.Compare("true", dict["changes"]["adds"]["isFile"], true) == 0)
+                            {
+                                string tempname = dict["changes"]["adds"]["displayName"];
+                                if (tempname.EndsWith(".pdf", true, null) == false) //i.e. it doesn't end in .pdf ignoring case
+                                    tempname += ".pdf";
+                                Stream pdf = work.GetDocId(
+                                    dict["changes"]["adds"]["globalKey"],
+                                    dict["changes"]["adds"]["displayName"],
+                                    dict["changes"]["adds"]["parentDigest"]
+                                );
+                                savePDF(pdf, dict["changes"]["adds"]["displayName"]);
+                            }
+                            else
+                            {
+                                getListings(dict["changes"]["adds"]["globalKey"]);
+                            }
+
+                        }
+                        else
+                        {
+                            //here adds is an array
+                            if (String.Compare("true", dict["changes"]["adds"][res]["isFile"], true) == 0)
+                            {
+                                string tempname = dict["changes"]["adds"][res]["displayName"];
+                                if (tempname.EndsWith(".pdf", true, null) == false) //i.e. it doesn't end in .pdf ignoring case
+                                    tempname += ".pdf";
+                                Stream pdf = work.GetDocId(
+                                    dict["changes"]["adds"][res]["globalKey"],
+                                    dict["changes"]["adds"][res]["displayName"],
+                                    dict["changes"]["adds"][res]["parentDigest"]
+                                );
+                                savePDF(pdf, dict["changes"]["adds"][res]["displayName"]);
+                            }
+                            else
+                            {
+                                getListings(dict["changes"]["adds"][res]["globalKey"]);
+                            }
+                        }
+                    }
+                    // after returning (i.e. when you enter 'x' to go back) reprint the list:
+                    counter = 0;
+                    try
+                    {
                         Dictionary<string, dynamic> item = dict["changes"]["adds"];
                         if (String.Compare("true", item["isFile"], true) == 0)
                         {
@@ -142,11 +227,9 @@ namespace ConsoleApplication1
                         }
                         counter++;
                     }
-                    catch ( Exception e)
+                    catch (Exception e)
                     {
-                        //exception is likely because adds is an array, so let's try processing it as array
-                        try
-                        {
+                        try {
                             foreach (Dictionary<string, dynamic> item in dict["changes"]["adds"])
                             {
                                 if (String.Compare("true", item["isFile"], true) == 0)
@@ -169,111 +252,10 @@ namespace ConsoleApplication1
                             Console.WriteLine("Sorry, we hit a snag: " + f);
                         }
                     }
+                    Console.WriteLine("x to go back, or select item by number");
+                    Console.WriteLine("");
                 }
-                Console.WriteLine("x to go back, or select item by number");
-                Console.WriteLine("");
-
-                while (String.Compare("x", wait, true) != 0)
-                {
-                    wait = Console.ReadLine();
-                    if (String.Compare("x", wait, true) == 0)
-                        return 1; //go back to the top folks!
-
-                    int res = 0;
-                    if (Int32.TryParse(wait, out res) == true)
-                    {
-                        if (res < counter)
-                        {
-                            if (counter == 1)
-                            {
-                                //special case - adds is not an array here
-                                if (String.Compare("true", dict["changes"]["adds"]["isFile"], true) == 0)
-                                {
-                                    string tempname = dict["changes"]["adds"]["displayName"];
-                                    if (tempname.EndsWith(".pdf", true, null) == false) //i.e. it doesn't end in .pdf ignoring case
-                                        tempname += ".pdf";
-                                    Stream pdf = work.GetDocId(
-                                        dict["changes"]["adds"]["globalKey"],
-                                        dict["changes"]["adds"]["displayName"],
-                                        dict["changes"]["adds"]["parentDigest"]
-                                    );
-                                    savePDF(pdf, dict["changes"]["adds"]["displayName"]);
-                                }
-                                else
-                                {
-                                    getListings(dict["changes"]["adds"]["globalKey"]);
-                                }
-
-                            }
-                            else
-                            {
-                                //here adds is an array
-                                if (String.Compare("true", dict["changes"]["adds"][res]["isFile"], true) == 0)
-                                {
-                                    string tempname = dict["changes"]["adds"][res]["displayName"];
-                                    if (tempname.EndsWith(".pdf", true, null) == false) //i.e. it doesn't end in .pdf ignoring case
-                                        tempname += ".pdf";
-                                    Stream pdf = work.GetDocId(
-                                        dict["changes"]["adds"][res]["globalKey"],
-                                        dict["changes"]["adds"][res]["displayName"],
-                                        dict["changes"]["adds"][res]["parentDigest"]
-                                    );
-                                    savePDF(pdf, dict["changes"]["adds"][res]["displayName"]);
-                                }
-                                else
-                                {
-                                    getListings(dict["changes"]["adds"][res]["globalKey"]);
-                                }
-                            }
-                        }
-                        // after returning (i.e. when you enter 'x' to go back) reprint the list:
-                        counter = 0;
-                        try
-                        {
-                            Dictionary<string, dynamic> item = dict["changes"]["adds"];
-                            if (String.Compare("true", item["isFile"], true) == 0)
-                            {
-                                Console.WriteLine("item: " + counter + " filename: " + item["displayName"]);
-                                Console.WriteLine("id" + item["globalKey"]);
-                                Console.WriteLine("location" + item["parentDigest"]);
-                            }
-                            else
-                            {
-                                Console.WriteLine("item: " + counter + " folder: " + item["displayName"]);
-                                Console.WriteLine("key: " + item["globalKey"]);
-                            }
-                            counter++;
-                        }
-                        catch (Exception e)
-                        {
-                            try {
-                                foreach (Dictionary<string, dynamic> item in dict["changes"]["adds"])
-                                {
-                                    if (String.Compare("true", item["isFile"], true) == 0)
-                                    {
-                                        Console.WriteLine("item: " + counter + " filename: " + item["displayName"]);
-                                        Console.WriteLine("id" + item["globalKey"]);
-                                        Console.WriteLine("location" + item["parentDigest"]);
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("item: " + counter + " folder: " + item["displayName"]);
-                                        Console.WriteLine("key: " + item["globalKey"]);
-                                    }
-                                    counter++;
-                                }
-                            }
-                            catch (Exception f)
-                            {
-                                //nope, there really is a problem here
-                                Console.WriteLine("Sorry, we hit a snag: " + f);
-                            }
-                        }
-                        Console.WriteLine("x to go back, or select item by number");
-                        Console.WriteLine("");
-                    }
-                }
-            }
+            }            
             return -1;
         }
         static void Main(string[] args)
@@ -373,7 +355,8 @@ namespace ConsoleApplication1
               
                 byte[] mycert = System.IO.File.ReadAllBytes( "d:\\demo-il.ya.p12" );
                 //work = new doWork("region", "client name (e.g. whiteandcase)", mycert , "cert password", "controller host", "controller port (e.g. 8082)", "appserver host", "appserver port", "username", "mypassword");
-                while ( getListings("ROOT") > 0 );
+                work = new doWork("San Francisco", "demo", mycert, "coverity", "demo.mobilehelix.com", "8443", "54.244.253.90", "8182", "ilya", "helix,41"); 
+                while (getListings("ROOT") > 0) ;
                 
 
                 /*

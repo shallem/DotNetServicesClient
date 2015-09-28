@@ -10,4 +10,3 @@ C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ClassLibrary1\bin\Rel
 C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\System.Web.Http.WebHost.xml
 C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ClassLibrary1\obj\Release\ClassLibrary1.dll
 C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ClassLibrary1\obj\Release\ClassLibrary1.pdb
-C:\Mobile Helix\Customers\W&C\DotNetServicesClient\CLItool\ClassLibrary1\obj\Release\MobileHelixUtility.csprojResolveAssemblyReference.cache

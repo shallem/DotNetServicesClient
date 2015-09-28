@@ -205,10 +205,13 @@ namespace MobileHelixUtility
             return null; //3 retries failed!
         }
 
-        //this returns the raw JSON for the roots. It may be returning 1 or more root entries.
-        //In the case where an app has multiple resources, there will be multiple roots
-        public String getRoots( string[] session )
+        //this returns 1 or more roots - each root is a String[2] with the human readable name in [0] and uniqueid in [1]
+        public List<String[]> getRoots( string[] ses )
         {
+            if (ses != null)
+            {
+                session = ses;
+            }
             Console.WriteLine("Trying to get Roots for session " + session[0]);
             try
             {
@@ -224,7 +227,37 @@ namespace MobileHelixUtility
                 
                 Console.WriteLine(ret);
 
-                return ret;
+                //this is the current directory listing contents
+                var dict = js.Deserialize<Dictionary<string, dynamic>>(ret);
+                if (dict == null)
+                    return null; //error!!
+
+                int counter = 0;
+                List<String[]> theRoots = new List<String[]>();
+
+                //ok - are we getting back multiple roots? If yes, there will be a "roots" key
+                if (dict.ContainsKey("roots"))
+                {
+                    //we need to print all roots - as long as they have a prop.containsKey["26"] - that's the unique resource ID we need
+                    foreach (Dictionary<string, dynamic> r in dict["roots"])
+                    {
+                        var props = js.Deserialize<Dictionary<string, dynamic>>(r["props"]);
+                        if (props.ContainsKey("26"))
+                        {
+                            String[] s = new String[2];
+                            s[0] = r["digest"];
+                            s[1] = props["26"];
+                            theRoots.Add(s);
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("no roots elements");
+                    return null;
+                }
+
+                return theRoots;
             }
             catch (Exception e)
             {
@@ -383,6 +416,8 @@ namespace MobileHelixUtility
         // when there is more than 1 Resource in 1 app
         public String GetRootListing(String[] root)
         {
+            currentRoot = null; //start over!
+
             var sync = getSyncdir(session, root[0], root[1]);
             StreamReader sr = new StreamReader(sync, Encoding.Default);
 
@@ -404,57 +439,28 @@ namespace MobileHelixUtility
         //call this when exiting back to the root listing menu (when there are multiple resources in one app)
         public void clearCurrentRoot()
         {
-            currentRoot = null;
+            
         }
 
         /* This is the starting point for listing contents/directories. 
-         * If there is only 1 filesystem (e.g. only WorkSite) then this returns the WS folder root structure
-         * If there are more than 1 filesystems, then it returns the list of file systems
+           Parameters: root (previously obtained by calling getRoots) and digest (location to list)
         */
-        public String GetListing(string digest)
+        public String GetListing(string root, string digest)
         {
-            //start at "ROOT" first
+            if (root == null || root == "")
+                root = "ROOT";
             if (digest == null || digest == "")
                 digest = "ROOT";
-            Console.WriteLine("digest: " + digest);
-            String root = null;
+            Console.WriteLine("root: " + root + " | digest: " + digest);
             JavaScriptSerializer js = new JavaScriptSerializer();
             
             if (session != null && session.Length == 2)
             {
-                if (currentRoot == null) { 
-                    root = getRoots(session);
-                    if (root == null)
-                        return null;
-
-                    var dict = js.Deserialize<Dictionary<string, dynamic>>(root);
-                    if (dict == null)
-                    {
-                        Console.WriteLine("getroots returned null.");
-                        return null;
-                    }
-                    var status = dict["msg"];
-                    if (String.Compare("success", status, true) == 0)
-                    {
-                        //if there is more than 1 resource, then simply return it back - the caller will have to deal with it
-                        //if there is only 1 resource, we can fetch its contents and give those back to the caller
-                        //either way it's a string - but the returned keys will be different
-                        if (dict["roots"].Count > 1)
-                            return root;
-                        
-                        currentRoot = new String[1];
-                        currentRoot[0] = dict["roots"]["digest"];
-                    }
-                    else
-                    {
-                        Console.WriteLine("Unable to get filesystem roots.");
-                        return "error: Unable to get filesystem roots.";
-                    }
-
-                    
+                if (currentRoot != null)
+                {
+                    root = currentRoot[0]; //this will either be the global currentRoot set by GetRootListing or the one returned from the getroots call
                 }
-                root = currentRoot[0]; //this will either be the global currentRoot set by GetRootListing or the one returned from the getroots call
-                Console.WriteLine("root = " + root );
+                Console.WriteLine("root = " + root);
 
                 var sync = getSyncdir(session, root, digest);
                 StreamReader sr = new StreamReader(sync, Encoding.Default);

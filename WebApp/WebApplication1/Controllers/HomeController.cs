@@ -143,35 +143,67 @@ namespace WebApplication1.Controllers
             } 
             try
             {
-                Stream sync = work.getSyncdir(session, (string) (Session["rootid"]), where);
-                if ( sync == null)
-                    return RedirectToAction("init", "home"); //no sync means we need to start at the beginning
+                List<String[]> roots = work.getRoots(session);
+                // this will return either 1 root, or multiple roots
+                // if multiple roots, need to select one
 
-                StreamReader sr = new StreamReader(sync, Encoding.Default);
-                var ret = sr.ReadToEnd();
-                var dict = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>( ret );
                 mobileHelixItems myItem;
-                List< mobileHelixItems > items = new List<mobileHelixItems>();
+                List<mobileHelixItems> items = new List<mobileHelixItems>();
 
-                if (dict["changes"] == null)
-                {
-                    ViewBag.message = "This folder is empty";
-                    return View(items);
-                }
+                if (roots == null)
+                    return null;
+                if (where == null){
+                    foreach (dynamic r in roots)
+                    {
+                        myItem = new mobileHelixItems();
+                        myItem.displayName = r[0];
+                        myItem.globalKey = r[1];
+                        myItem.parentDigest = r[1];
+                        myItem.isFile = false;
+                        myItem.current = null;
+                        items.Add(myItem);
+                    }
+                } else {
+                    
+                    // where may be a root uniqueid (Resource) or it may be a file or folder pointer
+                    // see if it equals one of the resources first and if yes, save it
 
-                foreach (dynamic item in dict["changes"]["adds"])
-                {
-                    myItem = new mobileHelixItems();
-                    myItem.displayName = item.displayName;
-                    myItem.globalKey = item.globalKey;
-                    myItem.parentDigest = item.parentDigest;
-                    myItem.isFile = item.isFile;
-                    myItem.current = where;
-                    items.Add(myItem);
+                    foreach (dynamic r in roots)
+                    {
+                        if (where == r[1])
+                        {
+                            Session["rootid"] = r[0];
+                            break;
+                        }
+                    }
+                    //assume it was set properly? (should check probably, TODO..)
+
+                    Stream sync = work.getSyncdir(session, (string) (Session["rootid"]), where);
+                    if ( sync == null)
+                        return RedirectToAction("init", "home"); //no sync means we need to start at the beginning
+
+                    StreamReader sr = new StreamReader(sync, Encoding.Default);
+                    var ret = sr.ReadToEnd();
+                    var dict = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>( ret );
+
+                    if (dict["changes"] == null)
+                    {
+                        ViewBag.message = "This folder is empty";
+                        return View(items);
+                    }
+
+                    foreach (dynamic item in dict["changes"]["adds"])
+                    {
+                        myItem = new mobileHelixItems();
+                        myItem.displayName = item.displayName;
+                        myItem.globalKey = item.globalKey;
+                        myItem.parentDigest = item.parentDigest;
+                        myItem.isFile = item.isFile;
+                        myItem.current = where;
+                        items.Add(myItem);
+                    }
                 }
-                
                 return View(items);
-
             }
             catch (Exception e)
             {
@@ -179,7 +211,11 @@ namespace WebApplication1.Controllers
             }
         }
 
-        
+        public ActionResult pickRoot(string root, string prop26)
+        {
+
+            return View();
+        }
 
         public ActionResult init(HttpPostedFileBase file, string certpassword, string h, string port, string apps_host, string apps_port, string user, string pass, string region, string client)
         {
@@ -210,10 +246,8 @@ namespace WebApplication1.Controllers
                     string theCert = Encoding.UTF8.GetString(cert);
                     Session["cert"] = theCert;
                     Session["certpass"] = certpassword;
-
                     
-                    String[] roots = work.getRoots(session);
-                    Session["rootid"] = roots[0];
+                    
                     //ViewBag.Message = "redirecting...";
                     //return View();
                     return RedirectToAction("index", "home", null);
