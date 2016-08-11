@@ -23,3 +23,16 @@ E:\Mobile Helix\WC\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\System
 E:\Mobile Helix\WC\DotNetServicesClient\CLItool\ClassLibrary1\obj\Release\ClassLibrary1.dll
 E:\Mobile Helix\WC\DotNetServicesClient\CLItool\ClassLibrary1\obj\Release\ClassLibrary1.pdb
 E:\Mobile Helix\WC\DotNetServicesClient\CLItool\ClassLibrary1\obj\Release\MobileHelixUtility.csprojResolveAssemblyReference.cache
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\ClassLibrary1.dll
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\ClassLibrary1.pdb
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\Newtonsoft.Json.dll
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\System.Net.Http.Formatting.dll
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\System.Web.Http.dll
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\System.Web.Http.WebHost.dll
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\Newtonsoft.Json.xml
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\System.Net.Http.Formatting.xml
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\System.Web.Http.xml
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\bin\Release\System.Web.Http.WebHost.xml
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\obj\Release\MobileHelixUtility.csprojResolveAssemblyReference.cache
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\obj\Release\ClassLibrary1.dll
+E:\Mobile Helix\1\DotNetServicesClient\CLItool\ClassLibrary1\obj\Release\ClassLibrary1.pdb
