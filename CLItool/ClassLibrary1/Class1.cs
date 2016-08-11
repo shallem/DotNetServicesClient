@@ -72,7 +72,100 @@ namespace MobileHelixUtility
             // shouldn't get here as cert path is a required parameter in Options.
         }
 
-        private HttpWebResponse doPOST( String uri, String postString)
+        public string getFileProperties(string sLocation, string sDocID, string sVersionNbr)
+        {
+            string sRetVal = string.Empty;
+
+            try
+            {
+                String uri = "https://" + apps_host + ":" + apps_port + "/clientws/files/getfileproperties";
+                
+                /*
+                string sPost = "{";
+                sPost += "\"digest\": \"" + sLocation + "\",";
+                sPost += "\"id\": \"" + sDocID + "\",";
+                sPost += "\"version\": \"" + sVersionNbr + "\",";
+                sPost += "\"targetIsFile\": \"true\"";
+                sPost += "}";
+                */
+
+                String sPost = "id=" + Uri.EscapeDataString(sDocID) +
+                "&digest=" + Uri.EscapeDataString(sLocation) +
+                "&version=" + Uri.EscapeDataString(sVersionNbr);
+                //"&targetIsFile=" + Uri.EscapeDataString(true);
+
+                List<string> lstCookies = new List<string>();
+                //lstCookies.Add(string.Format("\"{0}\"=\"{1}\"", "MH331", session[1]));      //App ID
+                //lstCookies.Add(string.Format("\"{0}\"=\"{1}\"", "MH333", session[0]));      //Session ID
+                lstCookies.Add("MH331=" + session[1]);
+                lstCookies.Add("MH333=" + session[0]); 
+
+                HttpWebResponse Response = doPOST(uri, sPost, lstCookies);
+
+                //The following code is not run due to the error encountered within the doPost method...
+                if (Response != null)
+                {
+                    StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
+                    JavaScriptSerializer js = new JavaScriptSerializer();
+
+                    string sRetData = sr.ReadToEnd();
+
+                    var oDictionary = js.Deserialize<Dictionary<string, dynamic>>(sRetData);
+
+                    oDictionary = oDictionary;
+                }
+            }
+            catch (Exception oEX)
+            {
+                //General.LogMsg(oEX);
+
+                string sMSG = oEX.Message + Environment.NewLine + Environment.NewLine + oEX.StackTrace;
+                sMSG = sMSG;
+            }
+
+            return sRetVal;
+        }
+
+        private HttpWebResponse doPOST( String uri, String postString, List<string> lstCookies )
+        {
+            try
+            {
+                HttpWebRequest Request = (HttpWebRequest)WebRequest.Create(uri);
+
+                if (lstCookies != null && lstCookies.Count > 0)
+                {
+                    String cookies = "";
+                    foreach (string sCookie in lstCookies)
+                    {
+                        cookies += sCookie + "; ";
+                    }
+                    Request.Headers.Add(HttpRequestHeader.Cookie, cookies);
+                }
+ 
+
+
+                Request.ClientCertificates.Add(new X509Certificate2(cert, certpass));
+                Request.UserAgent = "Client Cert Sample";
+                Request.Method = "POST";
+                Request.ContentType = "application/x-www-form-urlencoded";
+                Request.ContentLength = postString.Length;
+                Request.Accept = "application/json";
+                System.Net.ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
+                StreamWriter requestWriter = new StreamWriter(Request.GetRequestStream());
+                requestWriter.Write(postString);
+                requestWriter.Close();
+
+                HttpWebResponse Response = (HttpWebResponse)Request.GetResponse();
+                return Response;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return null;
+            }
+        }
+
+        private HttpWebResponse doPOST(String uri, String postString)
         {
             try
             {
@@ -239,16 +332,16 @@ namespace MobileHelixUtility
                 if (dict.ContainsKey("roots"))
                 {
                     //we need to print all roots - as long as they have a prop.containsKey["26"] - that's the unique resource ID we need
-                    foreach (Dictionary<string, dynamic> r in dict["roots"])
-                    {
+                    //this code works for multiple resources (Array vs singleton)
+                    foreach (Dictionary<string, dynamic> r in dict["roots"]){
+                        String[] s = new String[2];
                         var props = js.Deserialize<Dictionary<string, dynamic>>(r["props"]);
-                        if (props.ContainsKey("26"))
-                        {
-                            String[] s = new String[2];
+                        if (props.ContainsKey("26")){
                             s[0] = r["digest"];
                             s[1] = props["26"];
                             theRoots.Add(s);
                         }
+
                     }
                 }
                 else
@@ -261,8 +354,71 @@ namespace MobileHelixUtility
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                return null;
+                //this code works when there is exactly 1 resource (so singleton instead of array)
+                try
+                {
+                    String uri = "https://" + apps_host + ":" + apps_port + "/clientws/files/getroots?appid=" + 
+                    Uri.EscapeDataString(session[1]) + "&sessionid=" + Uri.EscapeDataString(session[0]);
+
+                    HttpWebResponse Response = doGET(uri);
+                    StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
+                    JavaScriptSerializer js = new JavaScriptSerializer();
+
+                    var ret = sr.ReadToEnd();
+                
+                    Console.WriteLine(ret);
+
+                    //this is the current directory listing contents
+                    var dict = js.Deserialize<Dictionary<string, dynamic>>(ret);
+                    if (dict == null)
+                        return null; //error!!
+
+                    int counter = 0;
+                    List<String[]> theRoots = new List<String[]>();
+
+                    //ok - are we getting back multiple roots? If yes, there will be a "roots" key
+                    if (dict.ContainsKey("roots"))
+                    {
+                        String[] s = new String[2];
+                        s[0] = null;
+                        s[1] = null;
+
+                        foreach (KeyValuePair<string, object> r in dict["roots"])
+                        {
+                            if (r.Key == "digest")
+                            {
+                                s[0] = r.Value.ToString();
+                            }
+                            if (r.Key == "props")
+                            {
+                                String x = r.Value.ToString();
+
+                                var props = js.Deserialize<Dictionary<string, dynamic>>(r.Value.ToString());
+                                if (props.ContainsKey("26"))
+                                {
+                                    s[1] = props["26"];
+                                    if (s[0] != null)
+                                    {
+                                        theRoots.Add(s);
+                                    }
+
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("no roots elements");
+                        return null;
+                    }
+
+                    return theRoots;
+                }
+                catch (Exception ee)
+                {
+                    Console.WriteLine(ee.ToString());
+                    return null;
+                }
             }
 
         }

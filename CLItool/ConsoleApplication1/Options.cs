@@ -53,7 +53,7 @@ namespace ConsoleApplication1
 
         [Option('l', "nrlFile", HelpText = "NRL source for the 'nrl' command")]
         public string ActionNrlFile { get; set; }
-
+     
         [Option('v', null, HelpText = "Print details during execution.")]
         public bool Verbose { get; set; }
 
