@@ -17,7 +17,7 @@ namespace ConsoleApplication1
 {
     class Program
     {
-        private static doWork work;
+        private static LinkClient work;
 
         // used to save the PDF locally
         private static bool savePDF(Stream pdf, String tempname)
@@ -55,6 +55,13 @@ namespace ConsoleApplication1
             }
         }
 
+        static private string writeInstructions()
+        {
+            Console.WriteLine("X to go back, xx to delete this session, or select item by number to browse");
+            Console.WriteLine("");
+            return Console.ReadLine();
+        }
+
         // where: fetch listing for this location
         //return -1 = error
         //return 0 = all good, all done
@@ -78,12 +85,14 @@ namespace ConsoleApplication1
                 
                 while (String.Compare("x", wait, true) != 0)
                 {
-                    Console.WriteLine("X to go back, or select item by number");
-                    Console.WriteLine("");
-
-                    wait = Console.ReadLine();
+                    wait = writeInstructions();
                     if (String.Compare("X", wait, true) == 0)
                         return 0; //all done
+                    if (String.Compare("xx", wait, true) == 0)
+                    {
+                        work.deleteSession();
+                        return 0; // all done
+                    }
 
                     int res = 0;
                     if (Int32.TryParse(wait, out res) == true)
@@ -157,7 +166,7 @@ namespace ConsoleApplication1
                     }
                 }
             }
-            Console.WriteLine("x to go back, or select item by number");
+            Console.WriteLine("x to go back, xx to delete this session, or select item by number");
             Console.WriteLine("");
             if (justTesting)
             {
@@ -169,6 +178,11 @@ namespace ConsoleApplication1
                 wait = Console.ReadLine();
                 if (String.Compare("x", wait, true) == 0)
                     return 1; //go back to the top folks!
+                if (String.Compare("xx", wait, true) == 0)
+                {
+                    work.deleteSession();
+                    return 0; // all done
+                }
 
                 int res = 0;
                 if (Int32.TryParse(wait, out res) == true)
@@ -192,7 +206,7 @@ namespace ConsoleApplication1
                             }
                             else
                             {
-                                getListings(dict["changes"]["adds"]["globalKey"]);
+                                if (getListings(dict["changes"]["adds"]["globalKey"]) <= 0) return 0;
                             }
 
                         }
@@ -213,7 +227,7 @@ namespace ConsoleApplication1
                             }
                             else
                             {
-                                getListings(dict["changes"]["adds"][res]["globalKey"]);
+                                if (getListings(dict["changes"]["adds"][res]["globalKey"]) <= 0) return 0;
                             }
                         }
                     }
@@ -237,7 +251,8 @@ namespace ConsoleApplication1
                     }
                     catch (Exception e)
                     {
-                        try {
+                        try
+                        {
                             foreach (Dictionary<string, dynamic> item in dict["changes"]["adds"])
                             {
                                 if (String.Compare("true", item["isFile"], true) == 0)
@@ -262,6 +277,20 @@ namespace ConsoleApplication1
                     }
                     Console.WriteLine("x to go back, or select item by number");
                     Console.WriteLine("");
+                } else if (wait.EndsWith("P") || wait.EndsWith("p"))
+                {
+                    wait = wait.Substring(0, wait.Length - 1);
+                    if (Int32.TryParse(wait, out res) == true)
+                    {
+                        if (String.Compare("true", dict["changes"]["adds"][res]["isFile"], true) == 0)
+                        {
+                            string props = work.GetProperties(
+                                dict["changes"]["adds"][res]["globalKey"],
+                                dict["changes"]["adds"][res]["parentDigest"]
+                            );
+                            Console.WriteLine("File properties: " + props);
+                        }
+                    }
                 }
             }            
             return -1;
@@ -313,7 +342,7 @@ namespace ConsoleApplication1
                     //test must create a new session on each test cycle!
                     if (options.ActionCommand != "test" && options.ActionCommand != "testemail")
                     {
-                        work = new doWork(
+                        work = new LinkClient(
                             options.ActionRegion,
                             options.ActionClient,
                             cert,
@@ -379,6 +408,7 @@ namespace ConsoleApplication1
                     {
                         //start by fetching the root, while being at the root level. Meaning back doesn't go any further back..
                         while (getListings("ROOT") > 0) ;
+                        Console.ReadLine();
                     }
 
                     else if (options.ActionCommand == "testemail")
@@ -390,7 +420,7 @@ namespace ConsoleApplication1
                     {
                         while (true)
                         {
-                            work = new doWork(
+                            work = new LinkClient(
                                 options.ActionRegion,
                                 options.ActionClient,
                                 cert,

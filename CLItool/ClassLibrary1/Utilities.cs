@@ -24,21 +24,21 @@ namespace MobileHelixUtility
 
     }
 
-    public class doWork
+    public class LinkClient
     {
         byte[] cert;
         private String certpass = null;
-        private String host = null;
-        private String ctrl_port = "8082";
-        private String apps_host = null;
-        private String apps_port = "8282";
+        private String controllerHost = null;
+        private String controllerPort = "8082";
+        private String appserverHost = null;
+        private String appserverPort = "8282";
         private string client = "whiteandcaselink";
         private string region = "Default";
         String[] session = null;
         String[] currentRoot = null;
 
         //this one is used by the CLI - since we can keep the session[] in memory while the program runs
-        public doWork(string theRegion, string theClient, byte[] certificate, string certPassword, string h, string port, string appsh, string appsport, string user, string pass)
+        public LinkClient(string theRegion, string theClient, byte[] certificate, string certPassword, string h, string port, string appsh, string appsport, string user, string pass)
         {
             if (theClient != null)
                 client = theClient;
@@ -47,110 +47,49 @@ namespace MobileHelixUtility
             
             cert = certificate;
             certpass = certPassword;
-            host = h;
-            apps_host = appsh;
-            ctrl_port = port;
-            apps_port = appsport;
+            controllerHost = h;
+            appserverHost = appsh;
+            controllerPort = port;
+            appserverPort = appsport;
             session = getSession(user, pass);
         }
 
         // this one is used by the webapp - it needs to provide session[] each time the page reloads
-        public doWork(string[] sess, byte[] certificate, string certPassword, string h, string port, string appsh, string appsport, string user, string pass)
+        public LinkClient(string[] sess, byte[] certificate, string certPassword, string h, string port, string appsh, string appsport, string user, string pass)
         {
             cert = certificate;
             certpass = certPassword;
-            host = h;
-            ctrl_port = port;
-            apps_host = appsh;
-            apps_port = appsport;
+            controllerHost = h;
+            controllerPort = port;
+            appserverHost = appsh;
+            appserverPort = appsport;
             session = sess;
         }
 
-        public doWork()
+        public LinkClient()
         {
             //cert will stay null and will throw an exception in session..
             // shouldn't get here as cert path is a required parameter in Options.
         }
 
-        public string getFileProperties(string sLocation, string sDocID, string sVersionNbr)
+        private void prepareRequest(HttpWebRequest req)
         {
-            string sRetVal = string.Empty;
-
-            try
-            {
-                String uri = "https://" + apps_host + ":" + apps_port + "/clientws/files/getfileproperties";
-                
-                /*
-                string sPost = "{";
-                sPost += "\"digest\": \"" + sLocation + "\",";
-                sPost += "\"id\": \"" + sDocID + "\",";
-                sPost += "\"version\": \"" + sVersionNbr + "\",";
-                sPost += "\"targetIsFile\": \"true\"";
-                sPost += "}";
-                */
-
-                String sPost = "id=" + Uri.EscapeDataString(sDocID) +
-                "&digest=" + Uri.EscapeDataString(sLocation) +
-                "&version=" + Uri.EscapeDataString(sVersionNbr);
-                //"&targetIsFile=" + Uri.EscapeDataString(true);
-
-                List<string> lstCookies = new List<string>();
-                //lstCookies.Add(string.Format("\"{0}\"=\"{1}\"", "MH331", session[1]));      //App ID
-                //lstCookies.Add(string.Format("\"{0}\"=\"{1}\"", "MH333", session[0]));      //Session ID
-                lstCookies.Add("MH331=" + session[1]);
-                lstCookies.Add("MH333=" + session[0]); 
-
-                HttpWebResponse Response = doPOST(uri, sPost, lstCookies);
-
-                //The following code is not run due to the error encountered within the doPost method...
-                if (Response != null)
-                {
-                    StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
-                    JavaScriptSerializer js = new JavaScriptSerializer();
-
-                    string sRetData = sr.ReadToEnd();
-
-                    var oDictionary = js.Deserialize<Dictionary<string, dynamic>>(sRetData);
-
-                    oDictionary = oDictionary;
-                }
-            }
-            catch (Exception oEX)
-            {
-                //General.LogMsg(oEX);
-
-                string sMSG = oEX.Message + Environment.NewLine + Environment.NewLine + oEX.StackTrace;
-                sMSG = sMSG;
-            }
-
-            return sRetVal;
+            req.ClientCertificates.Add(new X509Certificate2(cert, certpass));
+            req.UserAgent = "Link CLI agent";
+            req.Accept = "application/json";
+            // XXX: for this sample, do not any validation of the server cert.
+            System.Net.ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
         }
 
-        private HttpWebResponse doPOST( String uri, String postString, List<string> lstCookies )
+        private HttpWebResponse doPOST(String uri, String postString, String contentType)
         {
             try
             {
                 HttpWebRequest Request = (HttpWebRequest)WebRequest.Create(uri);
-
-                if (lstCookies != null && lstCookies.Count > 0)
-                {
-                    String cookies = "";
-                    foreach (string sCookie in lstCookies)
-                    {
-                        cookies += sCookie + "; ";
-                    }
-                    Request.Headers.Add(HttpRequestHeader.Cookie, cookies);
-                }
- 
-
-
-                Request.ClientCertificates.Add(new X509Certificate2(cert, certpass));
-                Request.UserAgent = "Client Cert Sample";
+                this.prepareRequest(Request);
                 Request.Method = "POST";
-                Request.ContentType = "application/x-www-form-urlencoded";
+                Request.ContentType = contentType;
                 Request.ContentLength = postString.Length;
-                Request.Accept = "application/json";
-                System.Net.ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
                 StreamWriter requestWriter = new StreamWriter(Request.GetRequestStream());
                 requestWriter.Write(postString);
                 requestWriter.Close();
@@ -165,30 +104,14 @@ namespace MobileHelixUtility
             }
         }
 
-        private HttpWebResponse doPOST(String uri, String postString)
+        private HttpWebResponse doJSONPost(String uri, String postString)
         {
-            try
-            {
-                HttpWebRequest Request = (HttpWebRequest)WebRequest.Create(uri);
-                Request.ClientCertificates.Add(new X509Certificate2(cert, certpass));
-                Request.UserAgent = "Client Cert Sample";
-                Request.Method = "POST";
-                Request.ContentType = "application/json";
-                Request.ContentLength = postString.Length;
-                Request.Accept = "application/json";
-                System.Net.ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
-                StreamWriter requestWriter = new StreamWriter(Request.GetRequestStream());
-                requestWriter.Write(postString);
-                requestWriter.Close();
+            return this.doPOST(uri, postString, "application/json");   
+        }
 
-                HttpWebResponse Response = (HttpWebResponse)Request.GetResponse();
-                return Response;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return null;
-            }
+        private HttpWebResponse doFormPOST(String uri, String postString)
+        {
+            return this.doPOST(uri, postString, "application/x-www-form-urlencoded");
         }
 
         private HttpWebResponse doGET(String uri)
@@ -196,13 +119,27 @@ namespace MobileHelixUtility
             try
             {
                 HttpWebRequest Request = (HttpWebRequest)WebRequest.Create(uri);
-                Request.ClientCertificates.Add(new X509Certificate2(cert, certpass));
-                Request.UserAgent = "Client Cert Sample";
+                this.prepareRequest(Request);
                 Request.Method = "GET";
-                Request.ContentType = "application/json";
                 Request.Accept = "application/json,application/pdf";
-                System.Net.ServicePointManager.CertificatePolicy = new AcceptAllCertificatePolicy();
-                //StreamWriter requestWriter = new StreamWriter(Request.GetRequestStream());
+                HttpWebResponse Response = (HttpWebResponse)Request.GetResponse();
+                return Response;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return null;
+            }
+        }
+
+        private HttpWebResponse doDELETE(String uri)
+        {
+            try
+            {
+                HttpWebRequest Request = (HttpWebRequest)WebRequest.Create(uri);
+                this.prepareRequest(Request);
+                Request.Method = "DELETE";
+                Request.Accept = "application/json";
                 HttpWebResponse Response = (HttpWebResponse)Request.GetResponse();
                 return Response;
             }
@@ -232,9 +169,9 @@ namespace MobileHelixUtility
                             "\"password\" : \"" + password + "\"}";
 
 
-                    String uri = "https://" + host + ":" + ctrl_port + "/ws/restricted/session";
+                    String uri = "https://" + controllerHost + ":" + controllerPort + "/ws/restricted/session";
                     Console.WriteLine("sending session request: " + uri);
-                    HttpWebResponse Response = doPOST(uri, postString);
+                    HttpWebResponse Response = doJSONPost(uri, postString);
                     
                     StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
                     JavaScriptSerializer js = new JavaScriptSerializer();
@@ -298,6 +235,30 @@ namespace MobileHelixUtility
             return null; //3 retries failed!
         }
 
+        public void deleteSession()
+        {
+            Console.WriteLine("Trying to establish session.");
+            try
+            {
+                string sessID = session[0];
+                string args = "sessionid=" + Uri.EscapeDataString(sessID);
+
+                String uri = "https://" + controllerHost + ":" + controllerPort + "/ws/restricted/session?" + args;
+                Console.WriteLine("sending delete session request: " + uri);
+                HttpWebResponse Response = doDELETE(uri);
+
+                StreamReader sr = new StreamReader(Response.GetResponseStream(), Encoding.Default);
+                JavaScriptSerializer js = new JavaScriptSerializer();
+                String output = sr.ReadToEnd();
+
+                Console.WriteLine("Output from session delete: " + output);
+            } catch(Exception e)
+            {
+                Console.WriteLine("Exception: " + e.Message);
+                Console.WriteLine("Sorry. There is a problem with the app configurations in Mobile Helix App Server.");
+            }
+        }
+
         //this returns 1 or more roots - each root is a String[2] with the human readable name in [0] and uniqueid in [1]
         public List<String[]> getRoots( string[] ses )
         {
@@ -309,7 +270,7 @@ namespace MobileHelixUtility
             try
             {
 
-                String uri = "https://" + apps_host + ":" + apps_port + "/clientws/files/getroots?appid=" + 
+                String uri = "https://" + appserverHost + ":" + appserverPort + "/clientws/files/getroots?appid=" + 
                     Uri.EscapeDataString(session[1]) + "&sessionid=" + Uri.EscapeDataString(session[0]);
 
                 HttpWebResponse Response = doGET(uri);
@@ -357,7 +318,7 @@ namespace MobileHelixUtility
                 //this code works when there is exactly 1 resource (so singleton instead of array)
                 try
                 {
-                    String uri = "https://" + apps_host + ":" + apps_port + "/clientws/files/getroots?appid=" + 
+                    String uri = "https://" + appserverHost + ":" + appserverPort + "/clientws/files/getroots?appid=" + 
                     Uri.EscapeDataString(session[1]) + "&sessionid=" + Uri.EscapeDataString(session[0]);
 
                     HttpWebResponse Response = doGET(uri);
@@ -432,7 +393,7 @@ namespace MobileHelixUtility
             {
 
                 String uri =
-                    "https://" + apps_host + ":" + apps_port + 
+                    "https://" + appserverHost + ":" + appserverPort + 
                     "/clientws/files/syncdir?appid=" + Uri.EscapeDataString(session[1]) + 
                     "&digest=" + Uri.EscapeDataString(digest) + 
                     "&sessionid=" + Uri.EscapeDataString(session[0]) + 
@@ -461,7 +422,7 @@ namespace MobileHelixUtility
                 }
                 try
                 {
-                    String uri = "https://" + apps_host + ":" + apps_port +
+                    String uri = "https://" + appserverHost + ":" + appserverPort +
                                "/clientws/files/getfileinfo?appid=" +
                                Uri.EscapeDataString(session[1]) +
                                "&digest=" + Uri.EscapeDataString(location) +
@@ -505,7 +466,7 @@ namespace MobileHelixUtility
                             filename.Length > 0
                         )
                     {
-                        uri = "https://" + apps_host + ":" + apps_port +
+                        uri = "https://" + appserverHost + ":" + appserverPort +
                             "/clientws/files/getfileview?appid=" +
                             Uri.EscapeDataString(session[1]) +
                             "&digest=" + Uri.EscapeDataString(location) +
@@ -515,7 +476,7 @@ namespace MobileHelixUtility
                     }
                     else
                     {
-                        uri = "https://" + apps_host + ":" + apps_port +
+                        uri = "https://" + appserverHost + ":" + appserverPort +
                             "/clientws/files/getfileview?appid=" +
                             Uri.EscapeDataString(session[1]) +
                             "&digest=" + Uri.EscapeDataString(location) +
@@ -596,6 +557,42 @@ namespace MobileHelixUtility
         public void clearCurrentRoot()
         {
             
+        }
+
+        public String GetProperties(string docid, string digest)
+        {
+            if (session != null && session.Length == 2)
+            {
+                Console.WriteLine("doc id = " + docid);
+
+                String uri = "https://" + appserverHost + ":" + appserverPort +
+                        "/clientws/files/getfileproperties";
+                string args = "appid=" +
+                        Uri.EscapeDataString(session[1]) +
+                        "&digest=" + Uri.EscapeDataString(digest) +
+                        "&id=" + Uri.EscapeDataString(docid) +
+                        "&sessionid=" + Uri.EscapeDataString(session[0]) +
+                        "&targetIsFile=true";
+
+                HttpWebResponse Response = doFormPOST(uri, args);
+                var props = Response.GetResponseStream();
+                StreamReader sr = new StreamReader(props, Encoding.Default);
+
+                var ret = sr.ReadToEnd();
+                JavaScriptSerializer js = new JavaScriptSerializer();
+                var dict1 = js.Deserialize<Dictionary<string, dynamic>>(ret);
+                var status1 = dict1["status"];
+                if (status1 == 0)
+                {
+                    return ret;
+                }
+                return "error: " + dict1["msg"];
+            }
+            else
+            {
+                Console.WriteLine("ERROR: Session creation failed.");
+                return "error: Session creation failed.";
+            }
         }
 
         /* This is the starting point for listing contents/directories. 

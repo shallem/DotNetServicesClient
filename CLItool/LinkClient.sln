@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApplication1", "ConsoleApplication1\ConsoleApplication1.csproj", "{40FE16EE-B31D-4C57-B566-54686C480011}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LinkCLIClient", "ConsoleApplication1\LinkCLIClient.csproj", "{40FE16EE-B31D-4C57-B566-54686C480011}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MobileHelixUtility", "ClassLibrary1\MobileHelixUtility.csproj", "{E01502A5-A36A-4624-BF42-F6CD2DC74381}"
 EndProject
